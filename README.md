@@ -5,8 +5,8 @@
 
 ## Team Members
 
-- [Kyrie Park]
-- [Aaron Wajah]
+- Aaron Wajah
+- Kyrie Park
 
 ## Features
 
