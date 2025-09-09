@@ -1,0 +1,70 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Categories - Retail Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Product Categories</h2>
+            <a href="{% url 'products:category_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New Category
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Categories ({{ categories.count }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                    <div class="row">
+                        {% for category in categories %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ category.name }}</h5>
+                                    <p class="card-text">
+                                        {% if category.description %}
+                                            {{ category.description|truncatewords:20 }}
+                                        {% else %}
+                                            <em class="text-muted">No description provided</em>
+                                        {% endif %}
+                                    </p>
+                                    <small class="text-muted">
+                                        Created: {{ category.created_at|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary">
+                                            {{ category.products.count }} product{{ category.products.count|pluralize }}
+                                        </span>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="#" class="btn btn-outline-warning">Edit</a>
+                                            <a href="#" class="btn btn-outline-danger">Delete</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <h5>No categories found</h5>
+                        <p class="text-muted">Start by creating your first category!</p>
+                        <a href="{% url 'products:category_create' %}" class="btn btn-primary">Add Category</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Products
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -2,6 +2,9 @@
 
 ## Project Description
 
+A retail management system with user authentication and product management capabilities. This project implements a 2-tier architecture with a web client and SQLite database for local persistence.
+
+**Current Status**: User authentication and product management systems are fully implemented. Sales management features are planned for future development.
 
 ## Team Members
 
@@ -12,18 +15,28 @@
 
 ### Implemented
 - **User Authentication System**
-  - User registration with extended profile fields
+  - User registration with extended profile fields (phone, address)
   - User login/logout functionality
   - User profile management
   - Secure password handling
   - Session management
+  - Dashboard for authenticated users
+
+- **Product Management System**
+  - Product catalog with full CRUD operations
+  - Category management system
+  - Product search and filtering
+  - Stock quantity tracking
+  - Product status management (active/inactive)
+  - Admin interface integration
+  - Responsive web interface
 
 ### In Progress
 - **Sales Management System**
-  - Product catalog management
   - Sales transaction processing
-  - Inventory management
   - Payment processing
+  - Inventory management
+  - Sales reporting
 
 ## Technology Stack
 
@@ -54,17 +67,32 @@ software-architecture-project/
     │   ├── forms.py         # Registration and login forms
     │   ├── urls.py          # Account URLs
     │   └── admin.py         # Admin configuration
+    ├── products/            # Product management app
+    │   ├── models.py        # Product and Category models
+    │   ├── views.py         # Product management views
+    │   ├── forms.py         # Product forms
+    │   ├── urls.py          # Product URLs
+    │   ├── admin.py         # Product admin configuration
+    │   └── management/      # Management commands
+    │       └── commands/    # Custom Django commands
     ├── retail/              # Main Django project
     │   ├── settings.py      # Django settings
     │   ├── urls.py          # Main URLs
     │   └── views.py         # Main views
-    └── templates/           # HTML templates
-        └── accounts/        # Account templates
-            ├── base.html    # Base template
-            ├── login.html   # Login page
-            ├── register.html # Registration page
-            ├── profile.html # Profile page
-            └── dashboard.html # Dashboard
+    ├── templates/           # HTML templates
+    │   ├── accounts/        # Account templates
+    │   │   ├── base.html    # Base template
+    │   │   ├── login.html   # Login page
+    │   │   ├── register.html # Registration page
+    │   │   ├── profile.html # Profile page
+    │   │   └── dashboard.html # Dashboard
+    │   └── products/        # Product templates
+    │       ├── product_list.html # Product listing
+    │       ├── product_detail.html # Product details
+    │       ├── product_form.html # Product forms
+    │       ├── category_list.html # Category listing
+    │       └── category_form.html # Category forms
+    └── db.sqlite3           # SQLite database
 ```
 
 ## Setup Instructions
@@ -139,20 +167,28 @@ Open your web browser and navigate to:
 
 ### 3. Available URLs
 
+#### **Authentication**
 - **Home/Login**: http://127.0.0.1:8000/
 - **User Registration**: http://127.0.0.1:8000/accounts/register/
 - **User Login**: http://127.0.0.1:8000/accounts/login/
 - **User Profile**: http://127.0.0.1:8000/accounts/profile/
 - **Dashboard**: http://127.0.0.1:8000/dashboard/
+
+#### **Product Management**
+- **Product List**: http://127.0.0.1:8000/products/
+- **Add Product**: http://127.0.0.1:8000/products/create/
+- **Categories**: http://127.0.0.1:8000/products/categories/
+- **Add Category**: http://127.0.0.1:8000/products/categories/create/
+
+#### **Administration**
 - **Admin Panel**: http://127.0.0.1:8000/admin/
 
 
 ## Next Steps
 
-1. Implement product catalog management
-2. Build sales transaction system
-3. Add inventory management
-4. Create reporting features
-5. Add unit tests for all functionality
-6. Create UML diagrams
-7. Write Architectural Decision Records (ADRs)
+1. Build sales transaction system
+2. Add payment processing
+3. Create sales reporting features
+4. Add unit tests for all functionality
+5. Create UML diagrams
+6. Write Architectural Decision Records (ADRs)

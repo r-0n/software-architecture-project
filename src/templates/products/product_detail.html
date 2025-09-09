@@ -1,0 +1,119 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ product.name }} - Product Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{{ product.name }}</h2>
+            <div>
+                <a href="{% url 'products:product_update' product.pk %}" class="btn btn-warning">Edit Product</a>
+                <a href="{% url 'products:product_list' %}" class="btn btn-secondary">Back to Products</a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Product Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-3">Name:</dt>
+                            <dd class="col-sm-9">{{ product.name }}</dd>
+
+                            <dt class="col-sm-3">SKU:</dt>
+                            <dd class="col-sm-9"><code>{{ product.sku }}</code></dd>
+
+                            <dt class="col-sm-3">Category:</dt>
+                            <dd class="col-sm-9">{{ product.category.name }}</dd>
+
+                            <dt class="col-sm-3">Price:</dt>
+                            <dd class="col-sm-9"><strong>${{ product.price }}</strong></dd>
+
+                            <dt class="col-sm-3">Stock Quantity:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge {% if product.stock_quantity == 0 %}bg-danger{% elif product.stock_quantity <= 10 %}bg-warning{% else %}bg-success{% endif %} fs-6">
+                                    {{ product.stock_quantity }} units
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-3">Stock Status:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge {% if product.stock_quantity == 0 %}bg-danger{% elif product.stock_quantity <= 10 %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ product.stock_status }}
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-3">Status:</dt>
+                            <dd class="col-sm-9">
+                                {% if product.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-3">Description:</dt>
+                            <dd class="col-sm-9">
+                                {% if product.description %}
+                                    {{ product.description|linebreaks }}
+                                {% else %}
+                                    <em class="text-muted">No description provided</em>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'products:product_update' product.pk %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Edit Product
+                            </a>
+                            <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Delete Product
+                            </a>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Products
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Product Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-6">Created:</dt>
+                            <dd class="col-sm-6">{{ product.created_at|date:"M d, Y" }}</dd>
+
+                            <dt class="col-sm-6">Last Updated:</dt>
+                            <dd class="col-sm-6">{{ product.updated_at|date:"M d, Y" }}</dd>
+
+                            <dt class="col-sm-6">In Stock:</dt>
+                            <dd class="col-sm-6">
+                                {% if product.is_in_stock %}
+                                    <span class="text-success">✓ Yes</span>
+                                {% else %}
+                                    <span class="text-danger">✗ No</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
