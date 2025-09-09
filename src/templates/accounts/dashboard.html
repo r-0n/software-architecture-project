@@ -1,0 +1,45 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Dashboard - Retail Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">Welcome to Retail Management System</h1>
+            <p class="lead">Hello, {{ user.first_name|default:user.username }}! You are successfully logged in.</p>
+            <hr class="my-4">
+            <p>This is your dashboard where you can manage your retail operations.</p>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Products</h5>
+                            <p class="card-text">Manage your product catalog</p>
+                            <a href="#" class="btn btn-primary">View Products</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Sales</h5>
+                            <p class="card-text">Process new sales and transactions</p>
+                            <a href="#" class="btn btn-success">New Sale</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Reports</h5>
+                            <p class="card-text">View sales reports and analytics</p>
+                            <a href="#" class="btn btn-info">View Reports</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
