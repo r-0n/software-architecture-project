@@ -10,6 +10,12 @@ class UserRegistrationForm(UserCreationForm):
     last_name = forms.CharField(max_length=30, required=True)
     phone_number = forms.CharField(max_length=15, required=False)
     address = forms.CharField(widget=forms.Textarea, required=False)
+    role = forms.ChoiceField(
+        choices=UserProfile.ROLE_CHOICES,
+        initial='customer',
+        widget=forms.RadioSelect,
+        help_text="Select your role in the system"
+    )
     
     class Meta:
         model = User
@@ -38,7 +44,8 @@ class UserRegistrationForm(UserCreationForm):
             UserProfile.objects.create(
                 user=user,
                 phone_number=self.cleaned_data['phone_number'],
-                address=self.cleaned_data['address']
+                address=self.cleaned_data['address'],
+                role=self.cleaned_data['role']
             )
         return user
 

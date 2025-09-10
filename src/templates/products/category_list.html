@@ -41,8 +41,8 @@
                                             {{ category.products.count }} product{{ category.products.count|pluralize }}
                                         </span>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="#" class="btn btn-outline-warning">Edit</a>
-                                            <a href="#" class="btn btn-outline-danger">Delete</a>
+                                            <a href="{% url 'products:category_update' category.pk %}" class="btn btn-outline-warning">Edit</a>
+                                            <a href="{% url 'products:category_delete' category.pk %}" class="btn btn-outline-danger">Delete</a>
                                         </div>
                                     </div>
                                 </div>

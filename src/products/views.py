@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Product, Category
 from .forms import ProductForm, ProductSearchForm, CategoryForm
+from accounts.decorators import admin_required
 
 
 @login_required
@@ -60,7 +61,7 @@ def product_detail(request, pk):
     return render(request, 'products/product_detail.html', context)
 
 
-@login_required
+@admin_required
 def product_create(request):
     """Create a new product"""
     if request.method == 'POST':
@@ -79,7 +80,7 @@ def product_create(request):
     return render(request, 'products/product_form.html', context)
 
 
-@login_required
+@admin_required
 def product_update(request, pk):
     """Update an existing product"""
     product = get_object_or_404(Product, pk=pk)
@@ -101,7 +102,7 @@ def product_update(request, pk):
     return render(request, 'products/product_form.html', context)
 
 
-@login_required
+@admin_required
 def product_delete(request, pk):
     """Delete a product"""
     product = get_object_or_404(Product, pk=pk)
@@ -118,7 +119,7 @@ def product_delete(request, pk):
     return render(request, 'products/product_confirm_delete.html', context)
 
 
-@login_required
+@admin_required
 def category_list(request):
     """Display list of categories"""
     categories = Category.objects.all()
@@ -128,7 +129,7 @@ def category_list(request):
     return render(request, 'products/category_list.html', context)
 
 
-@login_required
+@admin_required
 def category_create(request):
     """Create a new category"""
     if request.method == 'POST':
@@ -145,3 +146,42 @@ def category_create(request):
         'title': 'Create New Category',
     }
     return render(request, 'products/category_form.html', context)
+
+
+@admin_required
+def category_update(request, pk):
+    """Update an existing category"""
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Category "{category.name}" updated successfully!')
+            return redirect('products:category_list')
+    else:
+        form = CategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'title': f'Update {category.name}',
+        'category': category,
+    }
+    return render(request, 'products/category_form.html', context)
+
+
+@admin_required
+def category_delete(request, pk):
+    """Delete a category"""
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'POST':
+        category_name = category.name
+        category.delete()
+        messages.success(request, f'Category "{category_name}" deleted successfully!')
+        return redirect('products:category_list')
+    
+    context = {
+        'category': category,
+    }
+    return render(request, 'products/category_confirm_delete.html', context)

@@ -7,9 +7,11 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Product Management</h2>
-            <a href="{% url 'products:product_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Add New Product
-            </a>
+            {% if user.profile.is_admin %}
+                <a href="{% url 'products:product_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add New Product
+                </a>
+            {% endif %}
         </div>
 
         <!-- Search and Filter Form -->
@@ -36,7 +38,9 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Products ({{ total_products }} total)</h5>
-                <a href="{% url 'products:category_list' %}" class="btn btn-sm btn-outline-secondary">Manage Categories</a>
+                {% if user.profile.is_admin %}
+                    <a href="{% url 'products:category_list' %}" class="btn btn-sm btn-outline-secondary">Manage Categories</a>
+                {% endif %}
             </div>
             <div class="card-body">
                 {% if page_obj %}
@@ -50,7 +54,9 @@
                                     <th>Price</th>
                                     <th>Stock</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
+                                    {% if user.profile.is_admin %}
+                                        <th>Actions</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,13 +81,19 @@
                                             {{ product.stock_status }}
                                         </span>
                                     </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-outline-info">View</a>
-                                            <a href="{% url 'products:product_update' product.pk %}" class="btn btn-outline-warning">Edit</a>
-                                            <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-outline-danger">Delete</a>
-                                        </div>
-                                    </td>
+                                    {% if user_is_admin %}
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-outline-info">View</a>
+                                                <a href="{% url 'products:product_update' product.pk %}" class="btn btn-outline-warning">Edit</a>
+                                                <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-outline-danger">Delete</a>
+                                            </div>
+                                        </td>
+                                    {% else %}
+                                        <td>
+                                            <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-outline-info btn-sm">View</a>
+                                        </td>
+                                    {% endif %}
                                 </tr>
                                 {% endfor %}
                             </tbody>

@@ -1,0 +1,79 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Delete Category - {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Delete Category</h2>
+            <a href="{% url 'products:category_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Categories
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Confirm Deletion</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">Warning!</h5>
+                    <p class="mb-0">Are you sure you want to delete the category <strong>"{{ category.name }}"</strong>?</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>Category Details:</h6>
+                        <dl class="row">
+                            <dt class="col-sm-3">Name:</dt>
+                            <dd class="col-sm-9">{{ category.name }}</dd>
+                            
+                            <dt class="col-sm-3">Description:</dt>
+                            <dd class="col-sm-9">
+                                {% if category.description %}
+                                    {{ category.description }}
+                                {% else %}
+                                    <em class="text-muted">No description provided</em>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-3">Products:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-primary">
+                                    {{ category.products.count }} product{{ category.products.count|pluralize }}
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Created:</dt>
+                            <dd class="col-sm-9">{{ category.created_at|date:"M d, Y" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                {% if category.products.count > 0 %}
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">Important!</h6>
+                        <p class="mb-0">
+                            This category contains <strong>{{ category.products.count }} product{{ category.products.count|pluralize }}</strong>. 
+                            Deleting this category will also delete all associated products. This action cannot be undone.
+                        </p>
+                    </div>
+                {% endif %}
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete Category
+                        </button>
+                        <a href="{% url 'products:category_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
