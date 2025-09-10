@@ -32,5 +32,8 @@ class UserRegistrationForm(UserCreationForm):
 
 
 class UserLoginForm(forms.Form):
-    username = forms.CharField(max_length=150)
+    email = forms.EmailField(
+        label="Email Address",
+        help_text="Enter your email address"
+    )
     password = forms.CharField(widget=forms.PasswordInput)

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
@@ -25,15 +26,22 @@ def login_view(request):
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {user.first_name or user.username}!')
-                return redirect('dashboard')
-            else:
-                messages.error(request, 'Invalid username or password.')
+            
+            # Find user by email first
+            try:
+                user_obj = User.objects.get(email=email)
+                # Authenticate with the username (Django's authenticate uses username)
+                user = authenticate(request, username=user_obj.username, password=password)
+                if user is not None:
+                    login(request, user)
+                    messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+                    return redirect('dashboard')
+                else:
+                    messages.error(request, 'Invalid email or password.')
+            except User.DoesNotExist:
+                messages.error(request, 'No account found with this email address.')
     else:
         form = UserLoginForm()
     
