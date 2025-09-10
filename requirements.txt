@@ -1,11 +1,10 @@
-# --- core ---
+#core
 Django~=5.1
 python-dotenv~=1.0
 
-# --- tests ---
+#tests
 pytest~=8.2
 pytest-django~=4.9
 
-
-# --- (When using PostgreSQL later) ---
-# psycopg2-binary~=2.9
+#DB
+django-extensions

@@ -12,43 +12,71 @@
             </a>
         </div>
 
+        <!-- Search Form -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" name="search" class="form-control" placeholder="Search categories..." value="{{ request.GET.search|default:'' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-outline-primary w-100">Search</button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'products:category_list' %}" class="btn btn-outline-secondary w-100">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Categories ({{ categories.count }} total)</h5>
             </div>
             <div class="card-body">
                 {% if categories %}
-                    <div class="row">
-                        {% for category in categories %}
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ category.name }}</h5>
-                                    <p class="card-text">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Products</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ category.name }}</strong>
+                                    </td>
+                                    <td>
                                         {% if category.description %}
-                                            {{ category.description|truncatewords:20 }}
+                                            {{ category.description|truncatewords:15 }}
                                         {% else %}
-                                            <em class="text-muted">No description provided</em>
+                                            <em class="text-muted">No description</em>
                                         {% endif %}
-                                    </p>
-                                    <small class="text-muted">
-                                        Created: {{ category.created_at|date:"M d, Y" }}
-                                    </small>
-                                </div>
-                                <div class="card-footer">
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    </td>
+                                    <td>
                                         <span class="badge bg-primary">
                                             {{ category.products.count }} product{{ category.products.count|pluralize }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ category.created_at|date:"M d, Y" }}</small>
+                                    </td>
+                                    <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="{% url 'products:category_update' category.pk %}" class="btn btn-outline-warning">Edit</a>
                                             <a href="{% url 'products:category_delete' category.pk %}" class="btn btn-outline-danger">Delete</a>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 {% else %}
                     <div class="text-center py-5">

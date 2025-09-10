@@ -123,6 +123,15 @@ def product_delete(request, pk):
 def category_list(request):
     """Display list of categories"""
     categories = Category.objects.all()
+    
+    # Handle search
+    search_query = request.GET.get('search')
+    if search_query:
+        categories = categories.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
+    
     context = {
         'categories': categories,
     }

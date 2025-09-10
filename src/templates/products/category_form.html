@@ -36,7 +36,7 @@
                             Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            Create Category
+                            {% if category %}Update Category{% else %}Create Category{% endif %}
                         </button>
                     </div>
                 </form>
