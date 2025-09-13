@@ -88,7 +88,7 @@
                         </div>
                         <hr>
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary" disabled>Checkout (Coming Soon)</button>
+                            <a href="{% url 'cart:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
                             <form method="post" action="{% url 'cart:cart_clear' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-secondary w-100">Clear Cart</button>

@@ -6,6 +6,14 @@ from products.models import Product
 from .models import Cart
 
 
+#for checkout
+from django.db import transaction
+from .forms import CheckoutForm
+from orders.models import Order, OrderItem # new models
+from retail.payment import process_payment #new payment service
+
+
+
 def cart_view(request):
     """Display shopping cart"""
     cart = Cart(request)
@@ -76,3 +84,67 @@ def cart_count(request):
     """API endpoint to get cart item count (for AJAX)"""
     cart = Cart(request)
     return JsonResponse({'count': cart.get_total_items()})
+
+
+# -------------------------------
+# NEW CHECKOUT VIEW
+# -------------------------------
+@login_required
+@transaction.atomic
+def checkout(request):
+    cart = Cart(request)
+    if cart.get_total_items() == 0:
+        messages.error(request, "Your cart is empty.")
+        return redirect("cart:cart_view")
+
+    if request.method == "POST":
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            address = form.cleaned_data["address"]
+            payment_method = form.cleaned_data["payment_method"]
+            total = cart.get_total_price()
+
+            # Step 6: Process payment
+            result = process_payment(payment_method, float(total))
+            if result["status"] != "approved":
+                messages.error(request, "Payment declined. Try another method.")
+                return redirect("cart:checkout")
+
+            # Step 7 + 8: Save order + decrement stock atomically
+            order = Order.objects.create(
+                user=request.user,
+                address=address,
+                payment_method=payment_method,
+                payment_reference=result["reference"],
+                total=total,
+            )
+
+            for item in cart:
+                product = Product.objects.select_for_update().get(id=item["product"].id)
+                if product.stock_quantity < item["quantity"]:
+                    messages.error(request, f"Not enough stock for {product.name}.")
+                    return redirect("cart:cart_view")
+
+                product.stock_quantity -= item["quantity"]
+                product.save()
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=item["quantity"],
+                    unit_price=product.price,
+                )
+
+            # clear cart after successful order
+            cart.clear()
+            messages.success(request, "Checkout successful! Your order has been placed.")
+            return redirect("products:product_list")
+    else:
+        form = CheckoutForm()
+
+    context = {
+        "cart_items": list(cart),
+        "total_price": cart.get_total_price(),
+        "form": form,
+    }
+    return render(request, "cart/checkout.html", context)
