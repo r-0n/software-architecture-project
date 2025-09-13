@@ -1,0 +1,47 @@
+{% extends "accounts/base.html" %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Order Receipt</h2>
+    <hr>
+    <p><strong>Order ID:</strong> #{{ order.id }}</p>
+    <p><strong>Date:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+    <p><strong>Status:</strong> {{ order.status }}</p>
+    <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+    <p><strong>Payment Ref:</strong> {{ order.payment_reference }}</p>
+    <p><strong>Delivery Address:</strong> {{ order.address }}</p>
+
+    <hr>
+    <h5>Items:</h5>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.unit_price }}</td>
+                <td>${{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-end">
+        <h4>Total: ${{ order.total }}</h4>
+    </div>
+
+    <a href="{% url 'orders:order_history' %}" class="btn btn-secondary mt-3">Back to Orders</a>
+    <a href="{% url 'products:product_list' %}" class="btn btn-primary mt-3">Continue Shopping</a>
+    <a href="{% url 'orders:order_history' %}" class="btn btn-secondary mt-3">My Orders</a>
+
+</div>
+{% endblock %}

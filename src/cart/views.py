@@ -102,21 +102,23 @@ def checkout(request):
         if form.is_valid():
             address = form.cleaned_data["address"]
             payment_method = form.cleaned_data["payment_method"]
+            card_number = form.cleaned_data["card_number"]
             total = cart.get_total_price()
 
             # Step 6: Process payment
-            result = process_payment(payment_method, float(total))
+            result = process_payment(payment_method, float(total), card_number)
             if result["status"] != "approved":
-                messages.error(request, "Payment declined. Try another method.")
+                messages.error(request, "Payment failed. Try again.")
                 return redirect("cart:checkout")
 
-            # Step 7 + 8: Save order + decrement stock atomically
+            # Step 7 + 8: Save order + decrement stock
             order = Order.objects.create(
                 user=request.user,
                 address=address,
                 payment_method=payment_method,
                 payment_reference=result["reference"],
                 total=total,
+                status="COMPLETED",
             )
 
             for item in cart:
@@ -135,10 +137,9 @@ def checkout(request):
                     unit_price=product.price,
                 )
 
-            # clear cart after successful order
             cart.clear()
             messages.success(request, "Checkout successful! Your order has been placed.")
-            return redirect("products:product_list")
+            return redirect("orders:order_detail", order_id=order.id)
     else:
         form = CheckoutForm()
 

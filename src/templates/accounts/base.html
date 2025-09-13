@@ -17,12 +17,17 @@
             <div class="navbar-nav ms-auto">
                 {% if user.is_authenticated %}
                     <a class="nav-link" href="{% url 'products:product_list' %}">Products</a>
+
                     {% if not user_is_admin %}
                         <a class="nav-link" href="{% url 'cart:cart_view' %}">Cart</a>
+                        <a class="nav-link" href="{% url 'orders:order_history' %}">My Orders</a> <!-- added this for user order tracking -->
                     {% endif %}
+
                     {% if user_is_admin %}
                         <a class="nav-link" href="{% url 'products:category_list' %}">Categories</a>
                     {% endif %}
+
+                    
                     <a class="nav-link" href="{% url 'accounts:profile' %}">Profile</a>
                     <a class="nav-link" href="{% url 'accounts:logout' %}">Logout</a>
                 {% else %}

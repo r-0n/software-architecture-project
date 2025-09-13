@@ -6,15 +6,39 @@
     <h2>Checkout</h2>
     <form method="post">
         {% csrf_token %}
+
         <div class="mb-3">
             {{ form.address.label_tag }}
             {{ form.address }}
         </div>
+
         <div class="mb-3">
             {{ form.payment_method.label_tag }}
             {{ form.payment_method }}
         </div>
+
+        <!-- Only show when CARD is selected -->
+        <div class="mb-3" id="card-input" style="display: none;">
+            {{ form.card_number.label_tag }}
+            {{ form.card_number }}
+        </div>
+
         <button type="submit" class="btn btn-success">Confirm & Pay</button>
     </form>
 </div>
+
+<script>
+    const paymentSelect = document.getElementById("payment-method");
+    const cardInput = document.getElementById("card-input");
+
+    function toggleCardField() {
+        if (paymentSelect.value === "CARD") {
+            cardInput.style.display = "block";
+        } else {
+            cardInput.style.display = "none";
+        }
+    }
+    paymentSelect.addEventListener("change", toggleCardField);
+    document.addEventListener("DOMContentLoaded", toggleCardField);
+</script>
 {% endblock %}

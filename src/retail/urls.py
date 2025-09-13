@@ -29,4 +29,6 @@ urlpatterns = [
     path('cart/', include('cart.urls')),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('', redirect_to_login),
+    path("orders/", include("orders.urls")),
+
 ]
