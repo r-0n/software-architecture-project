@@ -115,11 +115,15 @@
                                                 {% if product.is_active and product.stock_quantity > 0 %}
                                                     <form method="post" action="{% url 'cart:cart_add' product.id %}" class="d-flex gap-1">
                                                         {% csrf_token %}
-                                                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" class="form-control form-control-sm" style="width: 70px;">
-                                                        <button type="submit" class="btn btn-success btn-sm">Add to Cart</button>
+                                                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" class="form-control form-control-sm" style="width: 70px;" title="Max: {{ product.stock_quantity }} available">
+                                                        {% if product.stock_quantity <= 5 %}
+                                                            <button type="submit" class="btn btn-warning btn-sm" title="⚠️ Low Stock: Only {{ product.stock_quantity }} left!">Add to Cart</button>
+                                                        {% else %}
+                                                            <button type="submit" class="btn btn-success btn-sm">Add to Cart</button>
+                                                        {% endif %}
                                                     </form>
                                                 {% else %}
-                                                    <button class="btn btn-secondary btn-sm" disabled>Out of Stock</button>
+                                                    <button class="btn btn-secondary btn-sm" disabled title="This product is currently unavailable">Out of Stock</button>
                                                 {% endif %}
                                             </div>
                                         </td>

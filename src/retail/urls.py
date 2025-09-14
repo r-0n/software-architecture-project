@@ -19,16 +19,18 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from . import views
 
-def redirect_to_login(request):
-    return redirect('accounts:login')
+def redirect_to_products(request):
+    if request.user.is_authenticated:
+        return redirect('products:product_list')
+    else:
+        return redirect('accounts:login')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('products/', include('products.urls')),
     path('cart/', include('cart.urls')),
-    path('dashboard/', views.dashboard, name='dashboard'),
-    path('', redirect_to_login),
+    path('', redirect_to_products),
     path("orders/", include("orders.urls")),
 
 ]

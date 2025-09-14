@@ -22,7 +22,7 @@ def admin_required(view_func):
         # Check if user has profile and is admin
         if not hasattr(request.user, 'profile') or not request.user.profile.is_admin:
             messages.error(request, 'You do not have permission to access this page. Admin access required.')
-            return redirect('dashboard')
+            return redirect('products:product_list')
         
         return view_func(request, *args, **kwargs)
     return _wrapped_view

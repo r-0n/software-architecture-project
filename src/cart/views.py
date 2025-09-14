@@ -31,16 +31,27 @@ def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     quantity = int(request.POST.get('quantity', 1))
     
-    # Check if product is in stock
-    if product.stock_quantity < quantity:
-        messages.error(request, f'Not enough stock. Available: {product.stock_quantity}')
-        return redirect('products:product_detail', pk=product_id)
-    
     if not product.is_active:
         messages.error(request, 'This product is not available for purchase.')
         return redirect('products:product_detail', pk=product_id)
     
     cart = Cart(request)
+    
+    # Check current quantity in cart
+    current_quantity = 0
+    if str(product.id) in cart.cart:
+        current_quantity = cart.cart[str(product.id)]['quantity']
+    
+    # Check if total quantity (current + new) exceeds stock
+    total_quantity = current_quantity + quantity
+    if total_quantity > product.stock_quantity:
+        available_to_add = product.stock_quantity - current_quantity
+        if available_to_add <= 0:
+            messages.error(request, f'Cannot add more {product.name}! You already have all {product.stock_quantity} available items in your cart. Please remove some items first or check back later for restocking.')
+        else:
+            messages.error(request, f'⚠️ Cannot add {quantity} more {product.name}(s). You can only add {available_to_add} more (you have {current_quantity} in cart, {product.stock_quantity} total available).')
+        return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
+    
     cart.add(product, quantity)
     messages.success(request, f'{product.name} added to cart!')
     
@@ -63,7 +74,7 @@ def cart_update(request, product_id):
     quantity = int(request.POST.get('quantity', 1))
     
     if quantity > product.stock_quantity:
-        messages.error(request, f'Not enough stock. Available: {product.stock_quantity}')
+        messages.error(request, f'⚠️ Cannot update quantity to {quantity}. Only {product.stock_quantity} {product.name}(s) available in stock. Please reduce the quantity.')
         return redirect('cart:cart_view')
     
     cart = Cart(request)

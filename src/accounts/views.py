@@ -21,7 +21,7 @@ class RegisterView(CreateView):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('products:product_list')
     
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
@@ -37,7 +37,7 @@ def login_view(request):
                 if user is not None:
                     login(request, user)
                     messages.success(request, f'Welcome back, {user.first_name or user.username}!')
-                    return redirect('dashboard')
+                    return redirect('products:product_list')
                 else:
                     messages.error(request, 'Invalid email or password.')
             except User.DoesNotExist:
