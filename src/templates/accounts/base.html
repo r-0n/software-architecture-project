@@ -19,7 +19,12 @@
                     <a class="nav-link" href="{% url 'products:product_list' %}">Products</a>
 
                     {% if not user_is_admin %}
-                        <a class="nav-link" href="{% url 'cart:cart_view' %}">Cart</a>
+                        <a class="nav-link" href="{% url 'cart:cart_view' %}">
+                            Cart 
+                            {% if cart_total_items > 0 %}
+                                <span class="badge bg-warning text-dark">{{ cart_total_items }}</span>
+                            {% endif %}
+                        </a>
                         <a class="nav-link" href="{% url 'orders:order_history' %}">My Orders</a> <!-- added this for user order tracking -->
                     {% endif %}
 

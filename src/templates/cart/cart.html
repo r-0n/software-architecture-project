@@ -5,13 +5,29 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Shopping Cart</h2>
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-cart3 me-2"></i>Shopping Cart
+                        </h2>
+                        <p class="mb-0 text-muted">Review your items and proceed to checkout</p>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    {% if cart_items %}
+        <div class="col-md-9">
+    {% else %}
+        <div class="col-12">
+    {% endif %}
     
     {% if cart_items %}
-        <div class="row">
-            <div class="col-md-8">
                 <div class="card">
                     <div class="card-body">
                         {% for item in cart_items %}
@@ -57,19 +73,22 @@
                         {% endfor %}
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card">
+    </div>
+    
+    {% if cart_items %}
+        <!-- Order Summary Sidebar -->
+        <div class="col-md-3">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
                     <div class="card-body">
-                        <h5>Order Summary</h5>
-                        <hr>
                         <div class="mb-3">
                             <h6>Items in Cart:</h6>
                             {% for item in cart_items %}
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div class="d-flex align-items-center gap-2">
-                                        <small class="text-muted">{{ item.product.name }}</small>
+                                        <small class="text-muted">{{ item.product.name|truncatechars:20 }}</small>
                                         <small class="text-muted">(Qty: {{ item.quantity }})</small>
                                     </div>
                                     <small class="fw-bold">${{ item.total_price|floatformat:2 }}</small>
@@ -78,8 +97,8 @@
                         </div>
                         <hr>
                         <div class="d-flex justify-content-between">
-                            <span>Total Items ({{ total_items }}):</span>
-                            <span>${{ total_price|floatformat:2 }}</span>
+                            <span>Total Items:</span>
+                            <span>{{ total_items }}</span>
                         </div>
                         <hr>
                         <div class="d-flex justify-content-between fw-bold">
@@ -89,16 +108,16 @@
                         <hr>
                         <div class="d-grid gap-2">
                             <a href="{% url 'cart:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-info w-100">Continue Shopping</a>
                             <form method="post" action="{% url 'cart:cart_clear' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-secondary w-100">Clear Cart</button>
                             </form>
-                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary">Continue Shopping</a>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
     {% else %}
         <div class="text-center py-5">
             <h4>Your cart is empty</h4>

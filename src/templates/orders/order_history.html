@@ -2,9 +2,25 @@
 {% block title %}My Orders{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>My Orders</h2>
-    <hr>
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-receipt me-2"></i>My Orders
+                        </h2>
+                        <p class="mb-0 text-muted">View your order history and track your purchases</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
     {% if orders %}
         <table class="table table-striped">
             <thead>
@@ -35,5 +51,6 @@
     {% else %}
         <p>You have not placed any orders yet.</p>
     {% endif %}
+    </div>
 </div>
 {% endblock %}

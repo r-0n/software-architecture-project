@@ -5,11 +5,27 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="mb-1 text-info">
+                            <i class="bi bi-speedometer2 me-3"></i>Dashboard
+                        </h1>
+                        <p class="mb-0 text-muted">Welcome back, {{ user.first_name|default:user.username }}! Manage your retail operations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
         <div class="jumbotron bg-light p-5 rounded">
-            <h1 class="display-4">Welcome to Retail Management System</h1>
-            <p class="lead">Hello, {{ user.first_name|default:user.username }}! You are successfully logged in.</p>
+            <h2 class="display-6">Welcome to Retail Management System</h2>
+            <p class="lead">This is your central hub where you can manage all aspects of your retail business.</p>
             <hr class="my-4">
-            <p>This is your dashboard where you can manage your retail operations.</p>
             <div class="row mt-4">
                 <div class="col-md-4">
                     <div class="card">

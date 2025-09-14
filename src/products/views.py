@@ -6,6 +6,7 @@ from django.db.models import Q
 from .models import Product, Category
 from .forms import ProductForm, ProductSearchForm, CategoryForm
 from accounts.decorators import admin_required
+from cart.models import Cart
 
 
 @login_required
@@ -43,10 +44,19 @@ def product_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get cart information for order summary
+    cart = Cart(request)
+    cart_items = list(cart)
+    cart_total_price = cart.get_total_price()
+    cart_total_items = cart.get_total_items()
+    
     context = {
         'page_obj': page_obj,
         'search_form': search_form,
         'total_products': products.count(),
+        'cart_items': cart_items,
+        'cart_total_price': cart_total_price,
+        'cart_total_items': cart_total_items,
     }
     return render(request, 'products/product_list.html', context)
 

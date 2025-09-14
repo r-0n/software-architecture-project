@@ -4,7 +4,7 @@
 
 A retail management system with user authentication and product management capabilities. This project implements a 2-tier architecture with a web client and SQLite database for local persistence.
 
-**Current Status**: User authentication and product management systems are fully implemented. Sales management features are planned for future development.
+**Current Status**: User authentication, product management, shopping cart, and order management systems are fully implemented. The system now supports complete e-commerce functionality with payment processing.
 
 ## Team Members
 
@@ -31,12 +31,37 @@ A retail management system with user authentication and product management capab
   - Admin interface integration
   - Responsive web interface
 
+- **Shopping Cart System**
+  - Session-based cart management
+  - Add/remove/update cart items
+  - Stock validation before adding items
+  - Real-time cart updates
+  - Cart persistence across sessions
+
+- **Order Management System**
+  - Complete order processing workflow
+  - Order history and tracking
+  - Order detail views
+  - Integration with cart system
+  - Automatic stock decrementation
+
+- **Payment Processing System**
+  - Mock payment processing service
+  - Support for cash and card payments
+  - Payment validation and reference generation
+  - Transaction management for data integrity
+
+- **Checkout Process**
+  - Secure checkout form with address collection
+  - Payment method selection
+  - Order confirmation and processing
+  - Stock validation during checkout
+
 ### In Progress
-- **Sales Management System**
-  - Sales transaction processing
-  - Payment processing
-  - Inventory management
-  - Sales reporting
+- **Sales Reporting System**
+  - Sales analytics and reporting
+  - Inventory management reports
+  - Customer order history analysis
 
 ## Technology Stack
 
@@ -45,6 +70,7 @@ A retail management system with user authentication and product management capab
 - **Frontend**: HTML, CSS, Bootstrap 5
 - **Python**: 3.13.3
 - **Testing**: pytest, pytest-django
+- **Development Tools**: django-extensions
 
 ## Project Structure
 
@@ -75,10 +101,22 @@ software-architecture-project/
     │   ├── admin.py         # Product admin configuration
     │   └── management/      # Management commands
     │       └── commands/    # Custom Django commands
+    ├── cart/                # Shopping cart app
+    │   ├── models.py        # CartItem model and Cart utility class
+    │   ├── views.py         # Cart management views
+    │   ├── forms.py         # Checkout form
+    │   ├── urls.py          # Cart URLs
+    │   └── admin.py         # Cart admin configuration
+    ├── orders/              # Order management app
+    │   ├── models.py        # Order and OrderItem models
+    │   ├── views.py         # Order management views
+    │   ├── urls.py          # Order URLs
+    │   └── admin.py         # Order admin configuration
     ├── retail/              # Main Django project
     │   ├── settings.py      # Django settings
     │   ├── urls.py          # Main URLs
-    │   └── views.py         # Main views
+    │   ├── views.py         # Main views
+    │   └── payment.py       # Payment processing service
     ├── templates/           # HTML templates
     │   ├── accounts/        # Account templates
     │   │   ├── base.html    # Base template
@@ -86,12 +124,18 @@ software-architecture-project/
     │   │   ├── register.html # Registration page
     │   │   ├── profile.html # Profile page
     │   │   └── dashboard.html # Dashboard
-    │   └── products/        # Product templates
-    │       ├── product_list.html # Product listing
-    │       ├── product_detail.html # Product details
-    │       ├── product_form.html # Product forms
-    │       ├── category_list.html # Category listing
-    │       └── category_form.html # Category forms
+    │   ├── products/        # Product templates
+    │   │   ├── product_list.html # Product listing
+    │   │   ├── product_detail.html # Product details
+    │   │   ├── product_form.html # Product forms
+    │   │   ├── category_list.html # Category listing
+    │   │   └── category_form.html # Category forms
+    │   ├── cart/            # Cart templates
+    │   │   ├── cart.html    # Shopping cart view
+    │   │   └── checkout.html # Checkout process
+    │   └── orders/          # Order templates
+    │       ├── order_history.html # Order history
+    │       └── order_detail.html # Order details
     └── db.sqlite3           # SQLite database
 ```
 
@@ -180,15 +224,28 @@ Open your web browser and navigate to:
 - **Categories**: http://127.0.0.1:8000/products/categories/
 - **Add Category**: http://127.0.0.1:8000/products/categories/create/
 
+#### **Shopping Cart**
+- **Cart View**: http://127.0.0.1:8000/cart/
+- **Add to Cart**: http://127.0.0.1:8000/cart/add/{product_id}/
+- **Remove from Cart**: http://127.0.0.1:8000/cart/remove/{product_id}/
+- **Update Cart**: http://127.0.0.1:8000/cart/update/{product_id}/
+- **Clear Cart**: http://127.0.0.1:8000/cart/clear/
+- **Checkout**: http://127.0.0.1:8000/cart/checkout/
+
+#### **Order Management**
+- **Order History**: http://127.0.0.1:8000/orders/
+- **Order Detail**: http://127.0.0.1:8000/orders/{order_id}/
+
 #### **Administration**
 - **Admin Panel**: http://127.0.0.1:8000/admin/
 
 
 ## Next Steps
 
-1. Build sales transaction system
-2. Add payment processing
-3. Create sales reporting features
-4. Add unit tests for all functionality
-5. Create UML diagrams
-6. Write Architectural Decision Records (ADRs)
+1. Create sales reporting and analytics features
+2. Add unit tests for all functionality
+3. Create UML diagrams
+4. Write Architectural Decision Records (ADRs)
+5. Add email notifications for order confirmations
+6. Implement inventory alerts for low stock
+7. Add customer order tracking system

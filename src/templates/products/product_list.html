@@ -5,14 +5,32 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Product Management</h2>
-            {% if user_is_admin %}
-                <a href="{% url 'products:product_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Add New Product
-                </a>
-            {% endif %}
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-box-seam me-2"></i>Product Management
+                        </h2>
+                        <p class="mb-0 text-muted">Browse and manage your product catalog</p>
+                    </div>
+                    {% if user_is_admin %}
+                        <a href="{% url 'products:product_create' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-plus-circle me-2"></i>Add New Product
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    {% if cart_items %}
+        <div class="col-md-9">
+    {% else %}
+        <div class="col-12">
+    {% endif %}
 
         <!-- Search and Filter Form -->
         <div class="card mb-4">
@@ -30,6 +48,11 @@
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-outline-primary w-100">Search</button>
                     </div>
+                    {% if request.GET.search or request.GET.category or request.GET.stock_status %}
+                        <div class="col-md-2">
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary w-100">Clear</a>
+                        </div>
+                    {% endif %}
                 </form>
             </div>
         </div>
@@ -143,13 +166,65 @@
                     {% endif %}
                 {% else %}
                     <div class="text-center py-5">
-                        <h5>No products found</h5>
-                        <p class="text-muted">Start by adding your first product!</p>
-                        <a href="{% url 'products:product_create' %}" class="btn btn-primary">Add Product</a>
+                        {% if request.GET.search or request.GET.category or request.GET.stock_status %}
+                            <h5>No products found matching your search</h5>
+                            <p class="text-muted">Try adjusting your search criteria or browse all products.</p>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary">View All Products</a>
+                        {% else %}
+                            <h5>No products available</h5>
+                            <p class="text-muted">There are currently no products in the catalog.</p>
+                            {% if user_is_admin %}
+                                <a href="{% url 'products:product_create' %}" class="btn btn-primary">Add First Product</a>
+                            {% endif %}
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
+    
+    {% if cart_items %}
+        <!-- Order Summary Sidebar -->
+        <div class="col-md-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Items in Cart:</h6>
+                        {% for item in cart_items %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted">{{ item.product.name|truncatechars:20 }}</small>
+                                    <small class="text-muted">(Qty: {{ item.quantity }})</small>
+                                </div>
+                                <small class="fw-bold">${{ item.total_price|floatformat:2 }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span>Total Items:</span>
+                        <span>{{ cart_total_items }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total:</span>
+                        <span>${{ cart_total_price|floatformat:2 }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'cart:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
+                        <a href="{% url 'cart:cart_view' %}" class="btn btn-outline-info w-100">View Cart</a>
+                        <form method="post" action="{% url 'cart:cart_clear' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary w-100">Clear Cart</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
