@@ -6,7 +6,7 @@ from django.contrib import messages
 def admin_required(view_func):
     """
     Decorator that requires the user to be an admin.
-    Redirects to dashboard with error message if user is not an admin.
+    Redirects to products page with error message if user is not an admin.
     Superusers automatically have admin access.
     """
     @wraps(view_func)
