@@ -27,7 +27,7 @@
 
 <div class="row mt-3">
     {% if cart_items %}
-        <div class="col-md-9">
+        <div class="col-md-10">
     {% else %}
         <div class="col-12">
     {% endif %}
@@ -71,14 +71,14 @@
                         <table class="table table-hover" style="table-layout: fixed;">
                             <thead>
                                 <tr>
-                                    <th style="width: 25%;">Name</th>
-                                    <th style="width: 15%;">SKU</th>
+                                    <th style="width: 30%;">Name</th>
+                                    <th style="width: 8%;">SKU</th>
                                     <th style="width: 15%;">Category</th>
                                     <th style="width: 10%;">Price</th>
                                     <th style="width: 10%;">Stock</th>
                                     <th style="width: 10%;">Status</th>
                                     {% if user_is_admin %}
-                                        <th style="width: 15%;">Actions</th>
+                                        <th style="width: 17%;">Actions</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -185,7 +185,7 @@
     
     {% if cart_items %}
         <!-- Order Summary Sidebar -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card sticky-top" style="top: 20px;">
                 <div class="card-header">
                     <h5 class="mb-0">Order Summary</h5>
