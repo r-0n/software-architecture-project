@@ -8,6 +8,38 @@
     <style>
         .navbar-brand { font-weight: bold; }
         .footer { margin-top: 50px; padding: 20px 0; background-color: #f8f9fa; }
+        
+        /* Toast Notification Styling */
+        .toast {
+            min-width: 300px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border-radius: 0.5rem;
+        }
+        
+        .toast-container {
+            max-width: 350px;
+        }
+        
+        .toast-body {
+            font-size: 0.9rem;
+            padding: 0.75rem 1rem;
+        }
+        
+        /* Animation for toast appearance */
+        .toast.show {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -44,17 +76,24 @@
     </nav>
 
     <div class="container-fluid px-5 mt-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
                 </div>
             {% endfor %}
         {% endif %}
-
-        {% block content %}
-        {% endblock %}
     </div>
 
     <footer class="footer">
@@ -67,6 +106,23 @@
 
     <!-- for tailwind css -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Toast Notifications Auto-Show Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all toast elements
+            var toastElements = document.querySelectorAll('.toast');
+            
+            // Show each toast
+            toastElements.forEach(function(toastElement) {
+                var toast = new bootstrap.Toast(toastElement, {
+                    autohide: true,
+                    delay: 5000
+                });
+                toast.show();
+            });
+        });
+    </script>
 
 </body>
 </html>
