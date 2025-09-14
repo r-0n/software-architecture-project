@@ -40,9 +40,14 @@
                     <td>${{ order.total }}</td>
                     <td>{{ order.status }}</td>
                     <td>
-                        <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
-                            View Receipt
-                        </a>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                View Receipt
+                            </a>
+                            <a href="{% url 'orders:download_receipt' order.id %}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}

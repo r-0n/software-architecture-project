@@ -1,11 +1,17 @@
-#core
+# Core Django Framework
 Django~=5.1
 python-dotenv~=1.0
 
-#tests
+# PDF Generation for Receipts
+reportlab~=4.0
+
+# Testing Framework
 pytest~=8.2
 pytest-django~=4.9
 
-#visualization
+# Development Tools
 django-extensions
 pydot
+
+# Additional utilities
+Pillow~=10.0  # For image handling (if needed for product images)
