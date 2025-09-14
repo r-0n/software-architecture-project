@@ -25,7 +25,7 @@ class CartItem(models.Model):
 
 
 class Cart:
-    """Shopping cart utility class for session-based cart management"""
+    """Shopping cart utility class for session and database-based cart management"""
     
     def __init__(self, request):
         self.session = request.session
@@ -40,69 +40,131 @@ class Cart:
 
     def add(self, product, quantity=1):
         """Add product to cart"""
-        product_id = str(product.id)
-        
-        if product_id in self.cart:
-            self.cart[product_id]['quantity'] += quantity
+        if self.user:
+            # User is logged in - use database storage
+            cart_item, created = CartItem.objects.get_or_create(
+                product=product,
+                user=self.user,
+                defaults={'quantity': quantity}
+            )
+            if not created:
+                cart_item.quantity += quantity
+                cart_item.save()
         else:
-            self.cart[product_id] = {
-                'quantity': quantity,
-                'price': str(product.price)
-            }
-        
-        self.save()
+            # Anonymous user - use session storage
+            product_id = str(product.id)
+            
+            if product_id in self.cart:
+                self.cart[product_id]['quantity'] += quantity
+            else:
+                self.cart[product_id] = {
+                    'quantity': quantity,
+                    'price': str(product.price)
+                }
+            
+            self.save()
 
     def remove(self, product):
         """Remove product from cart"""
-        product_id = str(product.id)
-        if product_id in self.cart:
-            del self.cart[product_id]
-            self.save()
+        if self.user:
+            # User is logged in - use database storage
+            try:
+                cart_item = CartItem.objects.get(product=product, user=self.user)
+                cart_item.delete()
+            except CartItem.DoesNotExist:
+                pass
+        else:
+            # Anonymous user - use session storage
+            product_id = str(product.id)
+            if product_id in self.cart:
+                del self.cart[product_id]
+                self.save()
 
     def update(self, product, quantity):
         """Update product quantity in cart"""
-        product_id = str(product.id)
-        if product_id in self.cart:
-            if quantity <= 0:
-                self.remove(product)
-            else:
-                self.cart[product_id]['quantity'] = quantity
-                self.save()
+        if self.user:
+            # User is logged in - use database storage
+            try:
+                cart_item = CartItem.objects.get(product=product, user=self.user)
+                if quantity <= 0:
+                    cart_item.delete()
+                else:
+                    cart_item.quantity = quantity
+                    cart_item.save()
+            except CartItem.DoesNotExist:
+                if quantity > 0:
+                    CartItem.objects.create(product=product, user=self.user, quantity=quantity)
+        else:
+            # Anonymous user - use session storage
+            product_id = str(product.id)
+            if product_id in self.cart:
+                if quantity <= 0:
+                    self.remove(product)
+                else:
+                    self.cart[product_id]['quantity'] = quantity
+                    self.save()
 
     def clear(self):
         """Clear entire cart"""
-        self.cart = {}
-        self.save()
+        if self.user:
+            # User is logged in - clear database storage
+            CartItem.objects.filter(user=self.user).delete()
+        else:
+            # Anonymous user - clear session storage
+            self.cart = {}
+            self.save()
 
     def save(self):
-        """Save cart to session"""
+        """Save cart to session (for anonymous users only)"""
         self.session['cart'] = self.cart
         self.session.modified = True
 
     def __iter__(self):
         """Iterate over cart items"""
-        product_ids = self.cart.keys()
-        products = Product.objects.filter(id__in=product_ids)
-        
-        for product in products:
-            self.cart[str(product.id)]['product'] = product
-        
-        for item in self.cart.values():
-            # Calculate total price for this item
-            item['total_price'] = float(item['price']) * item['quantity']
-            yield item
+        if self.user:
+            # User is logged in - iterate over database items
+            cart_items = CartItem.objects.filter(user=self.user)
+            for cart_item in cart_items:
+                yield {
+                    'product': cart_item.product,
+                    'quantity': cart_item.quantity,
+                    'price': str(cart_item.product.price),
+                    'total_price': cart_item.total_price
+                }
+        else:
+            # Anonymous user - iterate over session items
+            product_ids = self.cart.keys()
+            products = Product.objects.filter(id__in=product_ids)
+            
+            for product in products:
+                self.cart[str(product.id)]['product'] = product
+            
+            for item in self.cart.values():
+                # Calculate total price for this item
+                item['total_price'] = float(item['price']) * item['quantity']
+                yield item
 
     def __len__(self):
         """Return total number of items in cart"""
-        return sum(item['quantity'] for item in self.cart.values())
+        if self.user:
+            # User is logged in - count database items
+            return sum(item.quantity for item in CartItem.objects.filter(user=self.user))
+        else:
+            # Anonymous user - count session items
+            return sum(item['quantity'] for item in self.cart.values())
 
     def get_total_price(self):
         """Calculate total price of all items in cart"""
-        return sum(
-            float(item['price']) * item['quantity'] 
-            for item in self.cart.values()
-        )
+        if self.user:
+            # User is logged in - calculate from database
+            return sum(item.total_price for item in CartItem.objects.filter(user=self.user))
+        else:
+            # Anonymous user - calculate from session
+            return sum(
+                float(item['price']) * item['quantity'] 
+                for item in self.cart.values()
+            )
 
     def get_total_items(self):
         """Get total number of items in cart"""
-        return sum(item['quantity'] for item in self.cart.values())
+        return self.__len__()
