@@ -39,8 +39,18 @@ def cart_add(request, product_id):
     
     # Check current quantity in cart
     current_quantity = 0
-    if str(product.id) in cart.cart:
-        current_quantity = cart.cart[str(product.id)]['quantity']
+    if request.user.is_authenticated:
+        # For logged-in users, check database cart
+        try:
+            from cart.models import CartItem
+            cart_item = CartItem.objects.get(product=product, user=request.user)
+            current_quantity = cart_item.quantity
+        except CartItem.DoesNotExist:
+            current_quantity = 0
+    else:
+        # For anonymous users, check session cart
+        if str(product.id) in cart.cart:
+            current_quantity = cart.cart[str(product.id)]['quantity']
     
     # Check if total quantity (current + new) exceeds stock
     total_quantity = current_quantity + quantity
