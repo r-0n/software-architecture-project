@@ -39,8 +39,12 @@
                         <p><strong>Status:</strong> {{ order.status }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
-                        <p><strong>Payment Ref:</strong> {{ order.payment_reference }}</p>
+                        <p><strong>Payment Method:</strong> 
+                            {% if order.payment %}{{ order.payment.get_method_display }}{% else %}N/A{% endif %}
+                        </p>
+                        <p><strong>Payment Ref:</strong> 
+                            {% if order.payment %}{{ order.payment.reference|default:"N/A" }}{% else %}N/A{% endif %}
+                        </p>
                         <p><strong>Delivery Address:</strong> {{ order.address }}</p>
                     </div>
                 </div>

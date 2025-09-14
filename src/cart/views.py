@@ -9,7 +9,7 @@ from .models import Cart
 #for checkout
 from django.db import transaction
 from .forms import CheckoutForm
-from orders.models import Order, OrderItem # new models
+from orders.models import Sale, SaleItem, Payment # new models
 from retail.payment import process_payment #new payment service
 
 
@@ -124,13 +124,20 @@ def checkout(request):
                 messages.error(request, "Payment failed. Try again.")
                 return redirect("cart:checkout")
 
-            # Step 7 + 8: Save order + decrement stock
-            order = Order.objects.create(
+            # Step 7 + 8: Save sale + decrement stock
+            sale = Sale.objects.create(
                 user=request.user,
                 address=address,
-                payment_method=payment_method,
-                payment_reference=result["reference"],
                 total=total,
+                status="COMPLETED",
+            )
+
+            # Create payment record
+            Payment.objects.create(
+                sale=sale,
+                method=payment_method,
+                reference=result["reference"],
+                amount=total,
                 status="COMPLETED",
             )
 
@@ -143,8 +150,8 @@ def checkout(request):
                 product.stock_quantity -= item["quantity"]
                 product.save()
 
-                OrderItem.objects.create(
-                    order=order,
+                SaleItem.objects.create(
+                    sale=sale,
                     product=product,
                     quantity=item["quantity"],
                     unit_price=product.price,
@@ -152,7 +159,7 @@ def checkout(request):
 
             cart.clear()
             messages.success(request, "Checkout successful! Your order has been placed.")
-            return redirect("orders:order_detail", order_id=order.id)
+            return redirect("orders:order_detail", order_id=sale.id)
     else:
         form = CheckoutForm()
 

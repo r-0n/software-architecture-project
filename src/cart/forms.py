@@ -1,6 +1,6 @@
 # src/cart/forms.py
 from django import forms
-from orders.models import Order
+from orders.models import Payment
 
 class CheckoutForm(forms.Form):
     address = forms.CharField(
@@ -8,7 +8,7 @@ class CheckoutForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control"})
     )
     payment_method = forms.ChoiceField(
-        choices=Order.PAYMENT_METHODS,
+        choices=Payment.PAYMENT_METHODS,
         widget=forms.Select(attrs={"class": "form-select", "id": "payment-method"})
     )
     card_number = forms.CharField(

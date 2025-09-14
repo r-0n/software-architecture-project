@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
-from .models import Order
+from .models import Sale, SaleItem, Payment
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -15,20 +15,20 @@ from datetime import datetime
 
 @login_required
 def order_history(request):
-    orders = Order.objects.filter(user=request.user).order_by("-created_at")
-    return render(request, "orders/order_history.html", {"orders": orders})
+    sales = Sale.objects.filter(user=request.user).order_by("-created_at")
+    return render(request, "orders/order_history.html", {"orders": sales})
 
 
 @login_required
 def order_detail(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
-    return render(request, "orders/order_detail.html", {"order": order})
+    sale = get_object_or_404(Sale, id=order_id, user=request.user)
+    return render(request, "orders/order_detail.html", {"order": sale})
 
 
 @login_required
 def download_receipt(request, order_id):
     """Generate and download PDF receipt for an order"""
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    sale = get_object_or_404(Sale, id=order_id, user=request.user)
     
     # Create a BytesIO buffer to receive PDF data
     buffer = io.BytesIO()
@@ -69,15 +69,24 @@ def download_receipt(request, order_id):
     story.append(Paragraph("Order Information", heading_style))
     
     # Convert UTC timestamp to Dubai timezone for display
-    dubai_time = timezone.localtime(order.created_at, timezone.get_current_timezone())
+    dubai_time = timezone.localtime(sale.created_at, timezone.get_current_timezone())
     
+    # Get payment information
+    try:
+        payment = sale.payment
+        payment_method = payment.get_method_display()
+        payment_reference = payment.reference or "N/A"
+    except Payment.DoesNotExist:
+        payment_method = "N/A"
+        payment_reference = "N/A"
+
     order_info = [
-        ["Order ID:", f"#{order.id}"],
+        ["Sale ID:", f"#{sale.id}"],
         ["Date:", dubai_time.strftime("%Y-%m-%d %H:%M")],
-        ["Status:", order.status],
-        ["Payment Method:", order.get_payment_method_display()],
-        ["Payment Reference:", order.payment_reference],
-        ["Delivery Address:", order.address],
+        ["Status:", sale.status],
+        ["Payment Method:", payment_method],
+        ["Payment Reference:", payment_reference],
+        ["Delivery Address:", sale.address],
     ]
     
     order_table = Table(order_info, colWidths=[2*inch, 4*inch])
@@ -100,16 +109,16 @@ def download_receipt(request, order_id):
     
     # Table data
     items_data = [["Product", "Quantity", "Unit Price", "Subtotal"]]
-    for item in order.items.all():
+    for item in sale.items.all():
         items_data.append([
             item.product.name,
             str(item.quantity),
             f"${item.unit_price:.2f}",
             f"${item.subtotal():.2f}"
         ])
-    
+
     # Add total row
-    items_data.append(["", "", "TOTAL:", f"${order.total:.2f}"])
+    items_data.append(["", "", "TOTAL:", f"${sale.total:.2f}"])
     
     items_table = Table(items_data, colWidths=[3*inch, 1*inch, 1.5*inch, 1.5*inch])
     items_table.setStyle(TableStyle([
@@ -140,7 +149,7 @@ def download_receipt(request, order_id):
     
     # Create HTTP response
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="receipt_order_{order.id}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="receipt_sale_{sale.id}.pdf"'
     response.write(pdf)
     
     return response
