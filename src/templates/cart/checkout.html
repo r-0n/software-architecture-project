@@ -3,7 +3,12 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Checkout</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Checkout</h2>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="confirmBackToCart()">
+            <i class="bi bi-arrow-left"></i> Back to Cart
+        </button>
+    </div>
     
     <form method="post" novalidate>
         {% csrf_token %}
@@ -24,7 +29,10 @@
             {{ form.card_number }}
         </div>
 
-        <button type="submit" class="btn btn-success">Confirm & Pay</button>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">Confirm & Pay</button>
+            <button type="button" class="btn btn-secondary" onclick="confirmCancel()">Cancel</button>
+        </div>
     </form>
 </div>
 
@@ -41,5 +49,34 @@
     }
     paymentSelect.addEventListener("change", toggleCardField);
     document.addEventListener("DOMContentLoaded", toggleCardField);
+
+    function confirmCancel() {
+        if (confirm("Are you sure you want to cancel the payment? Your cart will be discarded.")) {
+            clearCartAndRedirect();
+        }
+    }
+
+    function confirmBackToCart() {
+        if (confirm("Are you sure you want to go back? Your cart will be discarded.")) {
+            clearCartAndRedirect();
+        }
+    }
+
+    function clearCartAndRedirect() {
+        // Clear the cart by making a request to clear endpoint
+        fetch("{% url 'cart:cart_clear' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        }).then(() => {
+            // Redirect to products page after clearing cart
+            window.location.href = "{% url 'products:product_list' %}";
+        }).catch(() => {
+            // If clear fails, still redirect to products page
+            window.location.href = "{% url 'products:product_list' %}";
+        });
+    }
 </script>
 {% endblock %}

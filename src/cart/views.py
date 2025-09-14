@@ -135,7 +135,7 @@ def checkout(request):
                     error_text = str(error).strip()
                     # Remove any HTML tags if present
                     error_text = re.sub(r'<[^>]+>', '', error_text)
-                    error_message = f"❌ {error_text}"
+                    error_message = error_text
                     print(f"Adding error message: {error_message}")
                     messages.error(request, error_message)
             
@@ -154,11 +154,11 @@ def checkout(request):
                 reason = result.get("reason", "Unknown error")
                 
                 if result["status"] == "failed":
-                    messages.error(request, f"❌ Payment failed: {reason}. Please check your details and try again.")
+                    messages.error(request, f"Payment failed: {reason}. Please check your details and try again.")
                 elif result["status"] == "declined":
-                    messages.error(request, f"❌ Payment declined: {reason}. Please try a different payment method or contact your bank.")
+                    messages.error(request, f"Payment declined: {reason}. Please try a different payment method or contact your bank.")
                 else:
-                    messages.error(request, "❌ Payment failed. Please try again.")
+                    messages.error(request, "Payment failed. Please try again.")
                 
                 # Log the payment attempt (in a real system, this would go to a proper logging system)
                 print(f"Payment attempt failed - Method: {payment_method}, Amount: ${total}, Status: {result['status']}, Reason: {reason}")
