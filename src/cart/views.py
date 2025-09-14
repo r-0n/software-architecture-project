@@ -77,7 +77,9 @@ def cart_clear(request):
     cart = Cart(request)
     cart.clear()
     messages.success(request, 'Cart cleared!')
-    return redirect('cart:cart_view')
+    
+    # Redirect back to the page they came from, default to products page
+    return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
 
 
 def cart_count(request):
