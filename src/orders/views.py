@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.utils import timezone
 from .models import Order
 import io
 from reportlab.lib.pagesizes import letter
@@ -67,9 +68,12 @@ def download_receipt(request, order_id):
     # Order Information
     story.append(Paragraph("Order Information", heading_style))
     
+    # Convert UTC timestamp to Dubai timezone for display
+    dubai_time = timezone.localtime(order.created_at, timezone.get_current_timezone())
+    
     order_info = [
         ["Order ID:", f"#{order.id}"],
-        ["Date:", order.created_at.strftime("%Y-%m-%d %H:%M")],
+        ["Date:", dubai_time.strftime("%Y-%m-%d %H:%M")],
         ["Status:", order.status],
         ["Payment Method:", order.get_payment_method_display()],
         ["Payment Reference:", order.payment_reference],
@@ -126,7 +130,6 @@ def download_receipt(request, order_id):
     
     # Footer
     story.append(Paragraph("Thank you for your business!", normal_style))
-    story.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
     
     # Build PDF
     doc.build(story)

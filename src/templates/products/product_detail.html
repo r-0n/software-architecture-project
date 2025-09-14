@@ -5,16 +5,30 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>{{ product.name }}</h2>
-            <div>
-                {% if user_is_admin %}
-                    <a href="{% url 'products:product_update' product.pk %}" class="btn btn-warning me-2">Edit Product</a>
-                    <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger me-2">Delete Product</a>
-                {% endif %}
-                <a href="{% url 'products:product_list' %}" class="btn btn-secondary">Back to Products</a>
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-box-seam me-2"></i>{{ product.name }}
+                        </h2>
+                        <p class="mb-0 text-muted">Product Details - SKU: {{ product.sku }}</p>
+                    </div>
+                    <div>
+                        {% if user_is_admin %}
+                            <a href="{% url 'products:product_update' product.pk %}" class="btn btn-warning me-2">Edit Product</a>
+                            <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger me-2">Delete Product</a>
+                        {% endif %}
+                        <a href="{% url 'products:product_list' %}" class="btn btn-light">Back to Products</a>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
 
         <div class="row">
             <div class="col-md-8">
