@@ -107,7 +107,7 @@
                     </div>
                 {% else %}
                     <!-- Regular Toast -->
-                    <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                    <div class="toast align-items-center text-white {% if message.tags == 'error' %}bg-danger{% elif message.tags == 'success' %}bg-success{% elif message.tags == 'warning' %}bg-warning{% elif message.tags == 'info' %}bg-info{% else %}bg-primary{% endif %} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
                         <div class="d-flex">
                             <div class="toast-body">
                                 {{ message }}

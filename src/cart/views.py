@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from products.models import Product
 from .models import Cart
+import re
 
 
 #for checkout
@@ -122,6 +123,24 @@ def checkout(request):
 
     if request.method == "POST":
         form = CheckoutForm(request.POST)
+        if not form.is_valid():
+            # Debug: Print form errors to console
+            print(f"Form validation failed: {form.errors}")
+            
+            # Convert form errors to toast notifications
+            for field, errors in form.errors.items():
+                print(f"Field: {field}, Errors: {errors}")
+                for error in errors:
+                    # Extract text content from error (remove HTML tags)
+                    error_text = str(error).strip()
+                    # Remove any HTML tags if present
+                    error_text = re.sub(r'<[^>]+>', '', error_text)
+                    error_message = f"❌ {error_text}"
+                    print(f"Adding error message: {error_message}")
+                    messages.error(request, error_message)
+            
+            return render(request, "cart/checkout.html", {"form": form, "cart_items": list(cart), "total_price": cart.get_total_price()})
+        
         if form.is_valid():
             address = form.cleaned_data["address"]
             payment_method = form.cleaned_data["payment_method"]
@@ -131,7 +150,18 @@ def checkout(request):
             # Step 6: Process payment
             result = process_payment(payment_method, float(total), card_number)
             if result["status"] != "approved":
-                messages.error(request, "Payment failed. Try again.")
+                # A4. Payment Failure/Decline - detailed error handling
+                reason = result.get("reason", "Unknown error")
+                
+                if result["status"] == "failed":
+                    messages.error(request, f"❌ Payment failed: {reason}. Please check your details and try again.")
+                elif result["status"] == "declined":
+                    messages.error(request, f"❌ Payment declined: {reason}. Please try a different payment method or contact your bank.")
+                else:
+                    messages.error(request, "❌ Payment failed. Please try again.")
+                
+                # Log the payment attempt (in a real system, this would go to a proper logging system)
+                print(f"Payment attempt failed - Method: {payment_method}, Amount: ${total}, Status: {result['status']}, Reason: {reason}")
                 return redirect("cart:checkout")
 
             # Step 7 + 8: Save sale + decrement stock
