@@ -1,9 +1,13 @@
-3) UML (4+1 Views)
-Provide diagrams for the following views: 
-- Logical: Class diagram.
+# UML (4+1 Views) 
 
-- Process: System Sequence diagram (purchase flow described above). 
+- ## Logical: Class diagram.
+
+- ## Process: System Sequence diagram . 
 ![System Sequence Diagram for purchase flow](image.png "System Sequence Diagram for purchase flow")
-- Deployment: Client + DB. - Implementation: Package/module diagram. 
+
+
+- ## Deployment: Client + DB. - Implementation: Package/module diagram. 
 ![Client +DB UML](image-1.png)
-- Use-Case: Register Sale, and all other use cases you implemented.
+
+
+- ## Use-Case: Register Sale, and all other use cases you implemented.
