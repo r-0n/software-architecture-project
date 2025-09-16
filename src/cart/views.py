@@ -12,6 +12,7 @@ from django.db import transaction
 from .forms import CheckoutForm
 from orders.models import Sale, SaleItem, Payment # new models
 from retail.payment import process_payment #new payment service
+from django.db.utils import IntegrityError # for concurrent conflict on stock
 
 
 
@@ -111,7 +112,7 @@ def cart_count(request):
 
 
 # -------------------------------
-# NEW CHECKOUT VIEW
+# NEW CHECKOUT VIEW (with concurrency handling)
 # -------------------------------
 @login_required
 @transaction.atomic
@@ -123,6 +124,8 @@ def checkout(request):
 
     if request.method == "POST":
         form = CheckoutForm(request.POST)
+
+        # A1. Form Validation Failure
         if not form.is_valid():
             # Debug: Print form errors to console
             print(f"Form validation failed: {form.errors}")
@@ -133,21 +136,24 @@ def checkout(request):
                 for error in errors:
                     # Extract text content from error (remove HTML tags)
                     error_text = str(error).strip()
-                    # Remove any HTML tags if present
                     error_text = re.sub(r'<[^>]+>', '', error_text)
                     error_message = error_text
                     print(f"Adding error message: {error_message}")
                     messages.error(request, error_message)
             
-            return render(request, "cart/checkout.html", {"form": form, "cart_items": list(cart), "total_price": cart.get_total_price()})
-        
+            return render(
+                request,
+                "cart/checkout.html",
+                {"form": form, "cart_items": list(cart), "total_price": cart.get_total_price()},
+            )
+
         if form.is_valid():
             address = form.cleaned_data["address"]
             payment_method = form.cleaned_data["payment_method"]
             card_number = form.cleaned_data["card_number"]
             total = cart.get_total_price()
 
-            # Step 6: Process payment
+            # Step 6: Process payment (mock)
             result = process_payment(payment_method, float(total), card_number)
             if result["status"] != "approved":
                 # A4. Payment Failure/Decline - detailed error handling
@@ -164,45 +170,67 @@ def checkout(request):
                 print(f"Payment attempt failed - Method: {payment_method}, Amount: ${total}, Status: {result['status']}, Reason: {reason}")
                 return redirect("cart:checkout")
 
-            # Step 7 + 8: Save sale + decrement stock
-            sale = Sale.objects.create(
-                user=request.user,
-                address=address,
-                total=total,
-                status="COMPLETED",
-            )
-
-            # Create payment record
-            Payment.objects.create(
-                sale=sale,
-                method=payment_method,
-                reference=result["reference"],
-                amount=total,
-                status="COMPLETED",
-            )
-
-            for item in cart:
-                product = Product.objects.select_for_update().get(id=item["product"].id)
-                if product.stock_quantity < item["quantity"]:
-                    messages.error(request, f"Not enough stock for {product.name}.")
-                    return redirect("cart:cart_view")
-
-                product.stock_quantity -= item["quantity"]
-                product.save()
-
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=product,
-                    quantity=item["quantity"],
-                    unit_price=product.price,
+            try:
+                # Step 7 + 8: Save sale + decrement stock atomically
+                sale = Sale.objects.create(
+                    user=request.user,
+                    address=address,
+                    total=total,
+                    status="COMPLETED",
                 )
 
-            cart.clear()
-            messages.success(request, "Checkout successful! Your order has been placed.")
-            return redirect("orders:order_detail", order_id=sale.id)
+                # Create payment record
+                Payment.objects.create(
+                    sale=sale,
+                    method=payment_method,
+                    reference=result["reference"],
+                    amount=total,
+                    status="COMPLETED",
+                )
+
+                for item in cart:
+                    # 🔑 Use select_for_update to lock product rows
+                    product = Product.objects.select_for_update().get(id=item["product"].id)
+
+                    if product.stock_quantity < item["quantity"]:
+                        # 8a. Concurrency conflict: not enough stock at commit
+                        raise IntegrityError(f"Insufficient stock for {product.name}")
+
+                    product.stock_quantity -= item["quantity"]
+                    product.save()
+
+                    SaleItem.objects.create(
+                        sale=sale,
+                        product=product,
+                        quantity=item["quantity"],
+                        unit_price=product.price,
+                    )
+
+                # Clear cart after successful checkout
+                cart.clear()
+                messages.success(request, "Checkout successful! Your order has been placed.")
+                return redirect("orders:order_detail", order_id=sale.id)
+
+            except IntegrityError as e:
+                # A5. Concurrency Conflict on Stock
+                # Rollback transaction + void/rollback payment (mock)
+                transaction.set_rollback(True)
+
+                # Log conflict (in real life → monitoring/alert system)
+                print(f"Concurrency conflict detected: {e}")
+                print(f"Voiding payment for order attempt - Method: {payment_method}, Ref: {result.get('reference')}")
+
+                messages.error(
+                    request,
+                    "Sorry, another customer just purchased the last of this item. "
+                    "Your payment has been voided. Please try again later."
+                )
+                return redirect("cart:cart_view")
+
     else:
         form = CheckoutForm()
 
+    # Render checkout form with cart summary
     context = {
         "cart_items": list(cart),
         "total_price": cart.get_total_price(),
