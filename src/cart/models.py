@@ -39,7 +39,14 @@ class Cart:
         self.cart = cart
 
     def add(self, product, quantity=1):
-        """Add product to cart"""
+        """Add product to cart with stock validation"""
+        # Check if product is active and has stock
+        if not product.is_active:
+            raise ValueError(f"Product {product.name} is not available for purchase")
+        
+        if product.stock_quantity <= 0:
+            raise ValueError(f"Product {product.name} is out of stock")
+        
         if self.user:
             # User is logged in - use database storage
             cart_item, created = CartItem.objects.get_or_create(
@@ -48,15 +55,26 @@ class Cart:
                 defaults={'quantity': quantity}
             )
             if not created:
-                cart_item.quantity += quantity
+                new_quantity = cart_item.quantity + quantity
+                if new_quantity > product.stock_quantity:
+                    raise ValueError(f"Cannot add {quantity} more {product.name}(s). Only {product.stock_quantity} available in stock.")
+                cart_item.quantity = new_quantity
                 cart_item.save()
+            else:
+                if quantity > product.stock_quantity:
+                    raise ValueError(f"Cannot add {quantity} {product.name}(s). Only {product.stock_quantity} available in stock.")
         else:
             # Anonymous user - use session storage
             product_id = str(product.id)
             
             if product_id in self.cart:
-                self.cart[product_id]['quantity'] += quantity
+                new_quantity = self.cart[product_id]['quantity'] + quantity
+                if new_quantity > product.stock_quantity:
+                    raise ValueError(f"Cannot add {quantity} more {product.name}(s). Only {product.stock_quantity} available in stock.")
+                self.cart[product_id]['quantity'] = new_quantity
             else:
+                if quantity > product.stock_quantity:
+                    raise ValueError(f"Cannot add {quantity} {product.name}(s). Only {product.stock_quantity} available in stock.")
                 self.cart[product_id] = {
                     'quantity': quantity,
                     'price': str(product.price)
@@ -81,7 +99,17 @@ class Cart:
                 self.save()
 
     def update(self, product, quantity):
-        """Update product quantity in cart"""
+        """Update product quantity in cart with stock validation"""
+        # Check if product is active and has stock
+        if not product.is_active:
+            raise ValueError(f"Product {product.name} is not available for purchase")
+        
+        if product.stock_quantity <= 0:
+            raise ValueError(f"Product {product.name} is out of stock")
+        
+        if quantity > product.stock_quantity:
+            raise ValueError(f"Cannot update quantity to {quantity}. Only {product.stock_quantity} {product.name}(s) available in stock.")
+        
         if self.user:
             # User is logged in - use database storage
             try:

@@ -64,8 +64,11 @@ def cart_add(request, product_id):
             messages.error(request, f'⚠️ Cannot add {quantity} more {product.name}(s). You can only add {available_to_add} more (you have {current_quantity} in cart, {product.stock_quantity} total available).')
         return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
     
-    cart.add(product, quantity)
-    messages.success(request, f'{product.name} added to cart!')
+    try:
+        cart.add(product, quantity)
+        messages.success(request, f'{product.name} added to cart!')
+    except ValueError as e:
+        messages.error(request, str(e))
     
     # Redirect back to the page they came from
     return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
@@ -90,8 +93,11 @@ def cart_update(request, product_id):
         return redirect('cart:cart_view')
     
     cart = Cart(request)
-    cart.update(product, quantity)
-    messages.success(request, f'Cart updated!')
+    try:
+        cart.update(product, quantity)
+        messages.success(request, f'Cart updated!')
+    except ValueError as e:
+        messages.error(request, str(e))
     return redirect('cart:cart_view')
 
 
@@ -115,7 +121,6 @@ def cart_count(request):
 # NEW CHECKOUT VIEW (with concurrency handling)
 # -------------------------------
 @login_required
-@transaction.atomic
 def checkout(request):
     cart = Cart(request)
     if cart.get_total_items() == 0:
@@ -127,19 +132,13 @@ def checkout(request):
 
         # A1. Form Validation Failure
         if not form.is_valid():
-            # Debug: Print form errors to console
-            print(f"Form validation failed: {form.errors}")
-            
-            # Convert form errors to toast notifications
+            # Convert form errors to user-friendly messages
             for field, errors in form.errors.items():
-                print(f"Field: {field}, Errors: {errors}")
                 for error in errors:
                     # Extract text content from error (remove HTML tags)
                     error_text = str(error).strip()
                     error_text = re.sub(r'<[^>]+>', '', error_text)
-                    error_message = error_text
-                    print(f"Adding error message: {error_message}")
-                    messages.error(request, error_message)
+                    messages.error(request, error_text)
             
             return render(
                 request,
@@ -167,65 +166,91 @@ def checkout(request):
                     messages.error(request, "Payment failed. Please try again.")
                 
                 # Log the payment attempt (in a real system, this would go to a proper logging system)
-                print(f"Payment attempt failed - Method: {payment_method}, Amount: ${total}, Status: {result['status']}, Reason: {reason}")
+                # TODO: Implement proper logging system
                 return redirect("cart:checkout")
 
+            # Use atomic transaction ONLY for the database operations
             try:
-                # Step 7 + 8: Save sale + decrement stock atomically
-                sale = Sale.objects.create(
-                    user=request.user,
-                    address=address,
-                    total=total,
-                    status="COMPLETED",
-                )
-
-                # Create payment record
-                Payment.objects.create(
-                    sale=sale,
-                    method=payment_method,
-                    reference=result["reference"],
-                    amount=total,
-                    status="COMPLETED",
-                )
-
-                for item in cart:
-                    # 🔑 Use select_for_update to lock product rows
-                    product = Product.objects.select_for_update().get(id=item["product"].id)
-
-                    if product.stock_quantity < item["quantity"]:
-                        # 8a. Concurrency conflict: not enough stock at commit
-                        raise IntegrityError(f"Insufficient stock for {product.name}")
-
-                    product.stock_quantity -= item["quantity"]
-                    product.save()
-
-                    SaleItem.objects.create(
-                        sale=sale,
-                        product=product,
-                        quantity=item["quantity"],
-                        unit_price=product.price,
+                with transaction.atomic():
+                    # Step 7 + 8: Save sale + decrement stock atomically
+                    sale = Sale.objects.create(
+                        user=request.user,
+                        address=address,
+                        total=total,
+                        status="COMPLETED",
                     )
 
-                # Clear cart after successful checkout
+                    # Create payment record
+                    Payment.objects.create(
+                        sale=sale,
+                        method=payment_method,
+                        reference=result["reference"],
+                        amount=total,
+                        status="COMPLETED",
+                    )
+
+                    for item in cart:
+                        # 🔑 Use select_for_update to lock product rows
+                        product = Product.objects.select_for_update().get(id=item["product"].id)
+
+                        if product.stock_quantity < item["quantity"]:
+                            # 8a. Concurrency conflict: not enough stock at commit
+                            raise IntegrityError(f"Insufficient stock for {product.name}")
+
+                        product.stock_quantity -= item["quantity"]
+                        product.save()
+
+                        SaleItem.objects.create(
+                            sale=sale,
+                            product=product,
+                            quantity=item["quantity"],
+                            unit_price=product.price,
+                        )
+
+                # Clear cart after successful checkout (OUTSIDE atomic block)
                 cart.clear()
                 messages.success(request, "Checkout successful! Your order has been placed.")
                 return redirect("orders:order_detail", order_id=sale.id)
 
             except IntegrityError as e:
                 # A5. Concurrency Conflict on Stock
-                # Rollback transaction + void/rollback payment (mock)
-                transaction.set_rollback(True)
-
                 # Log conflict (in real life → monitoring/alert system)
-                print(f"Concurrency conflict detected: {e}")
-                print(f"Voiding payment for order attempt - Method: {payment_method}, Ref: {result.get('reference')}")
+                # TODO: Implement proper logging system
 
-                messages.error(
-                    request,
-                    "Sorry, another customer just purchased the last of this item. "
-                    "Your payment has been voided. Please try again later."
-                )
-                return redirect("cart:cart_view")
+                # Clear the cart (OUTSIDE atomic block - this is now safe)
+                cart_cleared = False
+                try:
+                    # Create a fresh cart instance to ensure we're working with current data
+                    fresh_cart = Cart(request)
+                    fresh_cart.clear()
+                    
+                    # Double-check: Force clear cart items directly from database
+                    if request.user.is_authenticated:
+                        from cart.models import CartItem
+                        CartItem.objects.filter(user=request.user).delete()
+                    
+                    cart_cleared = True
+                except Exception as clear_error:
+                    cart_cleared = False
+
+                # Extract product name from error message for better user feedback
+                error_message = str(e)
+                if "Insufficient stock for" in error_message:
+                    product_name = error_message.replace("Insufficient stock for ", "")
+                    if cart_cleared:
+                        user_message = f"Sorry, another customer just purchased the last of '{product_name}'. Your payment has been voided and your cart has been cleared. Please try again later."
+                    else:
+                        user_message = f"Sorry, another customer just purchased the last of '{product_name}'. Your payment has been voided. Please check your cart and try again later."
+                else:
+                    if cart_cleared:
+                        user_message = "Sorry, another customer just purchased the last of this item. Your payment has been voided and your cart has been cleared. Please try again later."
+                    else:
+                        user_message = "Sorry, another customer just purchased the last of this item. Your payment has been voided. Please check your cart and try again later."
+                
+                messages.error(request, user_message)
+                
+                # Redirect to products page instead of cart view to avoid confusion
+                return redirect("products:product_list")
 
     else:
         form = CheckoutForm()
