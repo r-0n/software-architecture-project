@@ -49,20 +49,24 @@ class Cart:
         
         if self.user:
             # User is logged in - use database storage
-            cart_item, created = CartItem.objects.get_or_create(
-                product=product,
-                user=self.user,
-                defaults={'quantity': quantity}
-            )
-            if not created:
+            # First check if item already exists
+            try:
+                cart_item = CartItem.objects.get(product=product, user=self.user)
+                # Item exists - check if adding more would exceed stock
                 new_quantity = cart_item.quantity + quantity
                 if new_quantity > product.stock_quantity:
                     raise ValueError(f"Cannot add {quantity} more {product.name}(s). Only {product.stock_quantity} available in stock.")
                 cart_item.quantity = new_quantity
                 cart_item.save()
-            else:
+            except CartItem.DoesNotExist:
+                # Item doesn't exist - validate stock before creating
                 if quantity > product.stock_quantity:
                     raise ValueError(f"Cannot add {quantity} {product.name}(s). Only {product.stock_quantity} available in stock.")
+                CartItem.objects.create(
+                    product=product,
+                    user=self.user,
+                    quantity=quantity
+                )
         else:
             # Anonymous user - use session storage
             product_id = str(product.id)

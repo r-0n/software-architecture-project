@@ -1,0 +1,1 @@
+# Tests package for the retail management system
