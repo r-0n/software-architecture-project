@@ -2,7 +2,7 @@
 
 ## Project Description
 
-A retail management system with user authentication and product management capabilities. This project implements a 2-tier architecture with a web client and SQLite database for local persistence.
+A comprehensive retail management system built with Django that provides user authentication, product catalog management, shopping cart functionality, order processing, and payment handling. The system implements a 2-tier architecture with a web client and SQLite database for local persistence.
 
 ## Team Members
 
@@ -11,236 +11,126 @@ A retail management system with user authentication and product management capab
 
 ## Features
 
-### Implemented
-- **User Authentication System**
-  - User registration with extended profile fields (phone, address)
-  - User login/logout functionality
-  - User profile management
-  - Secure password handling
-  - Session management
-  - Dashboard for authenticated users
-
-- **Product Management System**
-  - Product catalog with full CRUD operations
-  - Category management system
-  - Product search and filtering
-  - Stock quantity tracking
-  - Product status management (active/inactive)
-  - Admin interface integration
-  - Responsive web interface
-
-- **Shopping Cart System**
-  - Session-based cart management for anonymous users
-  - Database-based cart management for authenticated users
-  - Add/remove/update cart items with real-time validation
-  - Proactive stock validation preventing overselling
-  - Real-time cart updates and persistence across sessions
-  - Comprehensive error handling for invalid operations
-
-- **Order Management System**
-  - Complete order processing workflow with Sale/SaleItem models
-  - Order history and tracking with detailed views
-  - PDF receipt generation and download
-  - Integration with cart system and payment processing
-  - Atomic stock decrementation with concurrency protection
-  - Comprehensive order status management
-
-- **Payment Processing System**
-  - Mock payment processing service with detailed validation
-  - Support for cash and card payments with comprehensive error handling
-  - Payment validation, reference generation, and failure scenarios
-  - Transaction management with atomic operations for data integrity
-  - Payment voiding and rollback capabilities for concurrency conflicts
-
-- **Checkout Process**
-  - Secure checkout form with address collection and validation
-  - Dynamic payment method selection with card input fields
-  - Order confirmation and processing with comprehensive error handling
-  - Real-time stock validation during checkout with concurrency protection
-  - Cart clearing and user notification for all scenarios
-
-- **Concurrency & Error Handling**
-  - Atomic transactions with row-level locking (select_for_update)
-  - Comprehensive concurrency conflict detection and handling
-  - Payment voiding and cart clearing for failed transactions
-  - User-friendly error messages for all failure scenarios
-  - Robust handling of alternative scenarios (A1-A6)
+- **User Authentication**: Registration, login/logout, profile management, secure sessions
+- **Product Management**: Full CRUD operations, categories, search/filtering, stock tracking
+- **Shopping Cart**: Session/database storage, real-time validation, stock protection
+- **Order Processing**: Complete workflow, order history, PDF receipts, status tracking
+- **Payment System**: Mock processing for cash/card payments with validation
+- **Checkout Flow**: Secure forms, address collection, payment method selection
+- **Concurrency Control**: Atomic transactions, row-level locking, error handling
 
 
 ## Technology Stack
 
-- **Backend**: Django 5.2.6
-- **Database**: SQLite3 (with atomic transactions and row-level locking)
+- **Backend**: Django 5.2.6, Python 3.13.3
+- **Database**: SQLite3 with atomic transactions
 - **Frontend**: HTML, CSS, Bootstrap 5, JavaScript
-- **Python**: 3.13.3
 - **PDF Generation**: reportlab
-- **Testing**: pytest, pytest-django
-- **Development Tools**: django-extensions
+- **Testing**: Django Test Framework
 
 ## Project Structure
 
 ```
 software-architecture-project/
-├── .git/                    # Git repository
-├── .venv/                   # Virtual environment
-├── db/                      # Database files
-├── docs/                    # Documentation
-│   ├── ADR/                 # Architectural Decision Records
-│   └── UML/                 # UML diagrams
-├── tests/                   # Unit tests
+├── docs/                    # Documentation (ADR, UML)
+├── tests/                   # Unit tests (business logic + database integration)
 ├── README.md                # This file
 ├── requirements.txt         # Dependencies
-└── src/                     # Source code
+├── run_tests.py             # Test runner script
+└── src/                     # Django project
     ├── manage.py            # Django management script
-    ├── accounts/            # Authentication app
-    │   ├── models.py        # User and UserProfile models
-    │   ├── views.py         # Authentication views
-    │   ├── forms.py         # Registration and login forms
-    │   ├── urls.py          # Account URLs
-    │   └── admin.py         # Admin configuration
-    ├── products/            # Product management app
-    │   ├── models.py        # Product and Category models
-    │   ├── views.py         # Product management views
-    │   ├── forms.py         # Product forms
-    │   ├── urls.py          # Product URLs
-    │   ├── admin.py         # Product admin configuration
-    │   └── management/      # Management commands
-    │       └── commands/    # Custom Django commands
-    ├── cart/                # Shopping cart app
-    │   ├── models.py        # CartItem model and Cart utility class
-    │   ├── views.py         # Cart management views
-    │   ├── forms.py         # Checkout form
-    │   ├── urls.py          # Cart URLs
-    │   └── admin.py         # Cart admin configuration
-    ├── orders/              # Order management app
-    │   ├── models.py        # Sale, SaleItem, and Payment models
-    │   ├── views.py         # Order management views with PDF generation
-    │   ├── urls.py          # Order URLs
-    │   └── admin.py         # Order admin configuration
-    ├── retail/              # Main Django project
-    │   ├── settings.py      # Django settings
-    │   ├── urls.py          # Main URLs
-    │   ├── views.py         # Main views
-    │   └── payment.py       # Payment processing service
-    ├── templates/           # HTML templates
-    │   ├── accounts/        # Account templates
-    │   │   ├── base.html    # Base template
-    │   │   ├── login.html   # Login page
-    │   │   ├── register.html # Registration page
-    │   │   ├── profile.html # Profile page
-    │   │   └── dashboard.html # Dashboard
-    │   ├── products/        # Product templates
-    │   │   ├── product_list.html # Product listing
-    │   │   ├── product_detail.html # Product details
-    │   │   ├── product_form.html # Product forms
-    │   │   ├── category_list.html # Category listing
-    │   │   └── category_form.html # Category forms
-    │   ├── cart/            # Cart templates
-    │   │   ├── cart.html    # Shopping cart view
-    │   │   └── checkout.html # Checkout process
-    │   └── orders/          # Order templates
-    │       ├── order_history.html # Order history
-    │       └── order_detail.html # Order details with PDF download
-    └── db.sqlite3           # SQLite database
+    ├── db.sqlite3           # SQLite database
+    ├── accounts/            # Authentication (models, views, forms, urls)
+    ├── products/            # Product management (CRUD, categories, admin)
+    ├── cart/                # Shopping cart (models, business_rules, checkout)
+    ├── orders/              # Order processing (sales, payments, PDF receipts)
+    ├── retail/              # Main project (settings, urls, payment service)
+    └── templates/           # HTML templates (accounts, products, cart, orders)
 ```
 
 ## Setup Instructions
 
 ### Prerequisites
+- Python 3.10+
+- Git
 
-- Python 3.10+ installed on your system
-- Git (for version control)
-
-### 1. Clone the Repository
-
+### Quick Setup
 ```bash
-git clone <your-repository-url>
+# Clone repository
+git clone <this-repository-url>
 cd software-architecture-project
-```
 
-### 2. Create Virtual Environment
-
-```bash
+# Create and activate virtual environment
 python -m venv .venv
-```
+# Windows: .venv\Scripts\Activate
+# macOS/Linux: source .venv/bin/activate
 
-### 3. Activate Virtual Environment
-
-**Windows:**
-```bash
-.venv\Scripts\Activate
-```
-
-**macOS/Linux:**
-```bash
-source .venv/bin/activate
-```
-
-### 4. Install Dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### 5. Navigate to Source Directory
-
-```bash
+# Setup database
 cd src
-```
-
-### 6. Create Database Migrations
-
-```bash
 python manage.py makemigrations
-```
-
-### 7. Apply Database Migrations
-
-```bash
 python manage.py migrate
 ```
 
 ## Run Instructions
 
-### 1. Start the Development Server
-
+### Start Development Server
 ```bash
 python manage.py runserver
 ```
 
-### 2. Access the Application
-
-Open your web browser and navigate to:
-- **Main Application**: http://127.0.0.1:8000/
+### Access Application
+- **Main App**: http://127.0.0.1:8000/
 - **Admin Panel**: http://127.0.0.1:8000/admin/
 
-### 3. Available URLs
+### Key URLs
+- **Authentication**: `/accounts/login/`, `/accounts/register/`, `/accounts/profile/`
+- **Products**: `/products/`, `/products/create/`, `/products/categories/`
+- **Cart**: `/cart/`, `/cart/checkout/`
+- **Orders**: `/orders/`, `/orders/{id}/download/`
 
-#### **Authentication**
-- **Home/Login**: http://127.0.0.1:8000/
-- **User Registration**: http://127.0.0.1:8000/accounts/register/
-- **User Login**: http://127.0.0.1:8000/accounts/login/
-- **User Profile**: http://127.0.0.1:8000/accounts/profile/
-- **Dashboard**: http://127.0.0.1:8000/dashboard/
+## Database Setup
 
-#### **Product Management**
-- **Product List**: http://127.0.0.1:8000/products/
-- **Add Product**: http://127.0.0.1:8000/products/create/
-- **Categories**: http://127.0.0.1:8000/products/categories/
-- **Add Category**: http://127.0.0.1:8000/products/categories/create/
+### Automatic Setup
+Database is created automatically during migration. SQLite file: `src/db.sqlite3`
 
-#### **Shopping Cart**
-- **Cart View**: http://127.0.0.1:8000/cart/
-- **Add to Cart**: http://127.0.0.1:8000/cart/add/{product_id}/
-- **Remove from Cart**: http://127.0.0.1:8000/cart/remove/{product_id}/
-- **Update Cart**: http://127.0.0.1:8000/cart/update/{product_id}/
-- **Clear Cart**: http://127.0.0.1:8000/cart/clear/
-- **Checkout**: http://127.0.0.1:8000/cart/checkout/
+### Models
+- **User & UserProfile**: Authentication and profiles
+- **Category & Product**: Catalog with stock management
+- **CartItem**: Shopping cart items
+- **Sale & SaleItem**: Order records and items
+- **Payment**: Transaction records
 
-#### **Order Management**
-- **Order History**: http://127.0.0.1:8000/orders/
-- **Order Detail**: http://127.0.0.1:8000/orders/{order_id}/
-- **Download Receipt**: http://127.0.0.1:8000/orders/{order_id}/download/
+### Sample Data
+```bash
+python manage.py create_sample_categories
+```
 
-#### **Administration**
-- **Admin Panel**: http://127.0.0.1:8000/admin/
+### Reset Database
+```bash
+rm src/db.sqlite3
+python manage.py migrate
+```
+
+### Create Admin User
+```bash
+python manage.py createsuperuser
+```
+
+## Test Instructions
+
+### Run Tests
+```bash
+python run_tests.py
+```
+
+### Test Coverage (24 total tests)
+- **Business Logic Tests (9)**: Payment processing, cart rules, stock validation
+- **Database Integration Tests (15)**: CartItem operations, checkout flow, atomic transactions
+
+### Test Output
+- Verbose execution details
+- Clear "BUSINESS LOGIC" vs "DATABASE INTEGRATION" categorization
+- Summary statistics with pass/fail counts and success rate
