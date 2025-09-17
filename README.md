@@ -4,8 +4,6 @@
 
 A retail management system with user authentication and product management capabilities. This project implements a 2-tier architecture with a web client and SQLite database for local persistence.
 
-**Current Status**: User authentication, product management, shopping cart, and order management systems are fully implemented. The system now supports complete e-commerce functionality with payment processing.
-
 ## Team Members
 
 - Aaron Wajah
@@ -32,43 +30,50 @@ A retail management system with user authentication and product management capab
   - Responsive web interface
 
 - **Shopping Cart System**
-  - Session-based cart management
-  - Add/remove/update cart items
-  - Stock validation before adding items
-  - Real-time cart updates
-  - Cart persistence across sessions
+  - Session-based cart management for anonymous users
+  - Database-based cart management for authenticated users
+  - Add/remove/update cart items with real-time validation
+  - Proactive stock validation preventing overselling
+  - Real-time cart updates and persistence across sessions
+  - Comprehensive error handling for invalid operations
 
 - **Order Management System**
-  - Complete order processing workflow
-  - Order history and tracking
-  - Order detail views
-  - Integration with cart system
-  - Automatic stock decrementation
+  - Complete order processing workflow with Sale/SaleItem models
+  - Order history and tracking with detailed views
+  - PDF receipt generation and download
+  - Integration with cart system and payment processing
+  - Atomic stock decrementation with concurrency protection
+  - Comprehensive order status management
 
 - **Payment Processing System**
-  - Mock payment processing service
-  - Support for cash and card payments
-  - Payment validation and reference generation
-  - Transaction management for data integrity
+  - Mock payment processing service with detailed validation
+  - Support for cash and card payments with comprehensive error handling
+  - Payment validation, reference generation, and failure scenarios
+  - Transaction management with atomic operations for data integrity
+  - Payment voiding and rollback capabilities for concurrency conflicts
 
 - **Checkout Process**
-  - Secure checkout form with address collection
-  - Payment method selection
-  - Order confirmation and processing
-  - Stock validation during checkout
+  - Secure checkout form with address collection and validation
+  - Dynamic payment method selection with card input fields
+  - Order confirmation and processing with comprehensive error handling
+  - Real-time stock validation during checkout with concurrency protection
+  - Cart clearing and user notification for all scenarios
 
-### In Progress
-- **Sales Reporting System**
-  - Sales analytics and reporting
-  - Inventory management reports
-  - Customer order history analysis
+- **Concurrency & Error Handling**
+  - Atomic transactions with row-level locking (select_for_update)
+  - Comprehensive concurrency conflict detection and handling
+  - Payment voiding and cart clearing for failed transactions
+  - User-friendly error messages for all failure scenarios
+  - Robust handling of alternative scenarios (A1-A6)
+
 
 ## Technology Stack
 
 - **Backend**: Django 5.2.6
-- **Database**: SQLite3
-- **Frontend**: HTML, CSS, Bootstrap 5
+- **Database**: SQLite3 (with atomic transactions and row-level locking)
+- **Frontend**: HTML, CSS, Bootstrap 5, JavaScript
 - **Python**: 3.13.3
+- **PDF Generation**: reportlab
 - **Testing**: pytest, pytest-django
 - **Development Tools**: django-extensions
 
@@ -108,8 +113,8 @@ software-architecture-project/
     │   ├── urls.py          # Cart URLs
     │   └── admin.py         # Cart admin configuration
     ├── orders/              # Order management app
-    │   ├── models.py        # Order and OrderItem models
-    │   ├── views.py         # Order management views
+    │   ├── models.py        # Sale, SaleItem, and Payment models
+    │   ├── views.py         # Order management views with PDF generation
     │   ├── urls.py          # Order URLs
     │   └── admin.py         # Order admin configuration
     ├── retail/              # Main Django project
@@ -135,7 +140,7 @@ software-architecture-project/
     │   │   └── checkout.html # Checkout process
     │   └── orders/          # Order templates
     │       ├── order_history.html # Order history
-    │       └── order_detail.html # Order details
+    │       └── order_detail.html # Order details with PDF download
     └── db.sqlite3           # SQLite database
 ```
 
@@ -235,17 +240,7 @@ Open your web browser and navigate to:
 #### **Order Management**
 - **Order History**: http://127.0.0.1:8000/orders/
 - **Order Detail**: http://127.0.0.1:8000/orders/{order_id}/
+- **Download Receipt**: http://127.0.0.1:8000/orders/{order_id}/download/
 
 #### **Administration**
 - **Admin Panel**: http://127.0.0.1:8000/admin/
-
-
-## Next Steps
-
-1. Create sales reporting and analytics features
-2. Add unit tests for all functionality
-3. Create UML diagrams
-4. Write Architectural Decision Records (ADRs)
-5. Add email notifications for order confirmations
-6. Implement inventory alerts for low stock
-7. Add customer order tracking system
