@@ -3,11 +3,13 @@ __pycache__/
 *.py[cod]
 *.pyc
 *.pyo
+*.so
 
 # Virtual Environment
 .venv/
 venv/
 env/
+ENV/
 
 # Django
 *.log
@@ -16,17 +18,23 @@ db.sqlite3
 db.sqlite3-journal
 media/
 staticfiles/
-
+static/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+.DS_Store?
 
 # Project specific
-migrations/__pycache__/
+src/migrations/__pycache__/
+src/accounts/migrations/__pycache__/
+src/products/migrations/__pycache__/
+src/cart/migrations/__pycache__/
+src/orders/migrations/__pycache__/

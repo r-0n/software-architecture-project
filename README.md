@@ -32,6 +32,8 @@ A comprehensive retail management system built with Django that provides user au
 
 ```
 software-architecture-project/
+├── db/                      # Database schema documentation
+│   └── init.sql             # Complete database schema (Django-generated)
 ├── docs/                    # Documentation (ADR, UML)
 ├── tests/                   # Unit tests (business logic + database integration)
 ├── README.md                # This file
@@ -97,11 +99,11 @@ python manage.py runserver
 Database is created automatically during migration. SQLite file: `src/db.sqlite3`
 
 ### Models
-- **User & UserProfile**: Authentication and profiles
-- **Category & Product**: Catalog with stock management
+- **User & UserProfile**: Authentication and profiles with role-based access
+- **Category & Product**: Catalog with stock management and SKU tracking
 - **CartItem**: Shopping cart items
-- **Sale & SaleItem**: Order records and items
-- **Payment**: Transaction records
+- **Sale & SaleItem**: Order records and items with atomic transactions
+- **Payment**: Transaction records with multiple payment methods
 
 ### Sample Data
 ```bash
