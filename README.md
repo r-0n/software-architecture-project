@@ -105,7 +105,7 @@ Database is created automatically during migration. SQLite file: `src/db.sqlite3
 
 ### Sample Data
 ```bash
-python manage.py create_sample_categories
+python manage.py create_sample_data
 ```
 
 ### Reset Database
