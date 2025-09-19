@@ -11,3 +11,4 @@
 
 
 - ## Use-Case: Register Sale, and all other use cases you implemented.
+![Usecase diagram](image-2.png)
