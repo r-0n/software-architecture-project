@@ -1,6 +1,7 @@
 # UML (4+1 Views) 
 
 - ## Logical: Class diagram.
+![class diagram](<class diagram.png>)
 
 - ## Process: System Sequence diagram . 
 ![System Sequence Diagram for purchase flow](image.png "System Sequence Diagram for purchase flow")
