@@ -1,9 +1,5 @@
-
-## Class Diagram
-
-```mermaid
 classDiagram
-    %% Django User Model (Built-in)
+    %% Core Models
     class User {
         +id: int
         +username: str
@@ -17,7 +13,6 @@ classDiagram
         +last_login: datetime
     }
 
-    %% Accounts Module
     class UserProfile {
         +id: int
         +user: OneToOneField(User)
@@ -30,37 +25,6 @@ classDiagram
         +__str__() str
     }
 
-    class UserRegistrationForm {
-        +email: EmailField
-        +first_name: CharField
-        +last_name: CharField
-        +phone_number: CharField
-        +address: CharField
-        +role: ChoiceField
-        +clean_email() str
-        +clean_username() str
-        +save() User
-    }
-
-    class UserLoginForm {
-        +email: EmailField
-        +password: CharField
-    }
-
-    class CustomUserAdmin {
-        +inlines: UserProfileInline
-        +list_display: tuple
-        +list_filter: tuple
-        +search_fields: tuple
-    }
-
-    class UserProfileInline {
-        +model: UserProfile
-        +can_delete: bool
-        +verbose_name_plural: str
-    }
-
-    %% Products Module
     class Category {
         +id: int
         +name: str
@@ -86,28 +50,6 @@ classDiagram
         +__str__() str
     }
 
-    class ProductForm {
-        +name: CharField
-        +description: TextField
-        +sku: CharField
-        +price: DecimalField
-        +category: ModelChoiceField
-        +stock_quantity: IntegerField
-        +is_active: BooleanField
-    }
-
-    class ProductSearchForm {
-        +search: CharField
-        +category: ModelChoiceField
-        +stock_status: ChoiceField
-    }
-
-    class CategoryForm {
-        +name: CharField
-        +description: TextField
-    }
-
-    %% Cart Module
     class CartItem {
         +id: int
         +product: ForeignKey(Product)
@@ -136,7 +78,6 @@ classDiagram
         +get_total_items() int
     }
 
-    %% Orders Module
     class Sale {
         +id: int
         +user: ForeignKey(User)
@@ -168,6 +109,45 @@ classDiagram
         +__str__() str
     }
 
+    %% Forms
+    class UserRegistrationForm {
+        +email: EmailField
+        +first_name: CharField
+        +last_name: CharField
+        +phone_number: CharField
+        +address: CharField
+        +role: ChoiceField
+        +clean_email() str
+        +clean_username() str
+        +save() User
+    }
+
+    class UserLoginForm {
+        +email: EmailField
+        +password: CharField
+    }
+
+    class ProductForm {
+        +name: CharField
+        +description: TextField
+        +sku: CharField
+        +price: DecimalField
+        +category: ModelChoiceField
+        +stock_quantity: IntegerField
+        +is_active: BooleanField
+    }
+
+    class ProductSearchForm {
+        +search: CharField
+        +category: ModelChoiceField
+        +stock_status: ChoiceField
+    }
+
+    class CategoryForm {
+        +name: CharField
+        +description: TextField
+    }
+
     class CheckoutForm {
         +address: CharField
         +payment_method: ChoiceField
@@ -175,26 +155,82 @@ classDiagram
         +clean() dict
     }
 
-    %% Business Rules Module
+    %% Admin Classes
+    class CustomUserAdmin {
+        +inlines: UserProfileInline
+        +list_display: tuple
+        +list_filter: tuple
+        +search_fields: tuple
+    }
+
+    class UserProfileInline {
+        +model: UserProfile
+        +can_delete: bool
+        +verbose_name_plural: str
+    }
+
+    class ProductAdmin {
+        +list_display: tuple
+        +list_filter: tuple
+        +search_fields: tuple
+        +list_editable: tuple
+        +fieldsets: tuple
+    }
+
+    class CategoryAdmin {
+        +list_display: tuple
+        +list_filter: tuple
+        +search_fields: tuple
+    }
+
+    %% Business Logic
     class BusinessRules {
-        +validate_product_for_cart(product_active, product_name) bool
-        +validate_quantity_limit(quantity, available_stock, product_name) bool
-        +validate_cart_update(quantity, available_stock, product_name) bool
-        +calculate_cart_total(items) Decimal
-        +calculate_item_total(price, quantity) Decimal
+        +validate_product_for_cart() bool
+        +validate_quantity_limit() bool
+        +validate_cart_update() bool
+        +calculate_cart_total() Decimal
+        +calculate_item_total() Decimal
     }
 
-    %% Payment Processing Module
     class PaymentProcessor {
-        +process_payment(method, amount, card_number) dict
+        +process_payment() dict
     }
 
-    %% Decorators Module
+    %% Support Classes
     class AdminRequired {
         +admin_required(view_func) function
     }
 
-    %% Relationships
+    class PDFReceiptGenerator {
+        +download_receipt() HttpResponse
+        +generate_pdf_content() bytes
+        +create_order_table() Table
+        +create_items_table() Table
+    }
+
+    class CreateSampleDataCommand {
+        +help: str
+        +handle() void
+    }
+
+    %% Context Processors
+    class UserAdminStatusProcessor {
+        +user_admin_status(request) dict
+    }
+
+    class CartContextProcessor {
+        +cart_context(request) dict
+    }
+
+    %% View Classes
+    class RegisterView {
+        +form_class: UserRegistrationForm
+        +template_name: str
+        +success_url: str
+        +form_valid() HttpResponseRedirect
+    }
+
+    %% Core Relationships
     User ||--|| UserProfile : "has profile"
     User ||--o{ CartItem : "owns cart items"
     User ||--o{ Sale : "makes sales"
@@ -213,56 +249,20 @@ classDiagram
     CategoryForm ..> Category : "manages"
     CheckoutForm ..> Payment : "validates"
     
+    %% Admin Relationships
+    CustomUserAdmin ..> User : "manages"
+    UserProfileInline ..> UserProfile : "inline"
+    ProductAdmin ..> Product : "manages"
+    CategoryAdmin ..> Category : "manages"
+    
     %% Business Logic Relationships
     Cart ..> BusinessRules : "uses validation"
     CartItem ..> BusinessRules : "uses calculation"
     PaymentProcessor ..> Payment : "processes"
-```
-
-## Key Relationships and Design Patterns
-
-### 1. **User Management**
-- `User` (Django built-in) extended with `UserProfile` via OneToOne relationship
-- Role-based access control with customer/admin roles
-- Custom registration form that creates both User and UserProfile
-
-### 2. **Product Catalog**
-- `Category` → `Product` (One-to-Many)
-- Products have SKU, pricing, stock management, and status tracking
-- Comprehensive search and filtering capabilities
-
-### 3. **Shopping Cart System**
-- Dual storage: Database for authenticated users, Session for anonymous users
-- `Cart` utility class manages both storage types transparently
-- Stock validation integrated into cart operations
-
-### 4. **Order Processing**
-- `Sale` → `SaleItem` (One-to-Many) for order line items
-- `Sale` → `Payment` (One-to-One) for payment tracking
-- Status tracking throughout the order lifecycle
-
-### 5. **Business Rules Separation**
-- Dedicated `BusinessRules` module for reusable validation logic
-- Testable business logic separated from Django model methods
-- Consistent error handling and validation
-
-### 6. **Payment Integration**
-- Mock payment processor with realistic failure scenarios
-- Support for Cash and Card payment methods
-- Comprehensive validation and error handling
-
-### 7. **Security & Access Control**
-- Custom decorator for admin-only functionality
-- Form validation with business rule enforcement
-- Session management for anonymous users
-
-## Architecture Benefits
-
-1. **Modular Design**: Clear separation of concerns across Django apps
-2. **Extensibility**: Easy to add new payment methods, product attributes, or user roles
-3. **Testability**: Business logic separated into testable functions
-4. **Scalability**: Database indexes and efficient query patterns
-5. **User Experience**: Seamless cart persistence across login sessions
-6. **Security**: Role-based access control and comprehensive validation
-
-This architecture follows Django best practices while implementing a robust e-commerce system with proper separation of concerns and maintainable code structure.
+    PDFReceiptGenerator ..> Sale : "generates receipts"
+    PDFReceiptGenerator ..> SaleItem : "includes items"
+    PDFReceiptGenerator ..> Payment : "includes payment info"
+    
+    %% Context Processor Relationships
+    UserAdminStatusProcessor ..> UserProfile : "provides context"
+    CartContextProcessor ..> Cart : "provides context"
