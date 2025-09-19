@@ -1,4 +1,4 @@
-# ADR-002: Persistence Pattern Choice
+# Persistence Style Architectural Decision
 
 ## Status
 **Accepted**

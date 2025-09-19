@@ -1,4 +1,4 @@
-# ADR-001: Database Technology Choice
+# Database Architectural Decision
 
 ## Status
 **Accepted**

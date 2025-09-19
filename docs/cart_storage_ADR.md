@@ -1,4 +1,4 @@
-# ADR-003: Cart Storage Strategy
+# Cart Storage Architectural Decision
 
 ## Status
 **Accepted**
