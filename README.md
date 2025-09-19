@@ -75,6 +75,10 @@ cd src
 python manage.py makemigrations
 python manage.py migrate
 ```
+### Sample Data
+```bash
+python manage.py create_sample_data
+```
 
 ## Run Instructions
 
@@ -105,10 +109,7 @@ Database is created automatically during migration. SQLite file: `src/db.sqlite3
 - **Sale & SaleItem**: Order records and items with atomic transactions
 - **Payment**: Transaction records with multiple payment methods
 
-### Sample Data
-```bash
-python manage.py create_sample_data
-```
+
 
 ### Reset Database
 ```bash
