@@ -31,6 +31,21 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     stock_quantity = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    
+    # Add these new fields for partner integration and flash sales
+    partner = models.ForeignKey('partner_feeds.Partner', on_delete=models.SET_NULL, 
+                               null=True, blank=True, related_name='products')
+    is_flash_sale = models.BooleanField(default=False)
+    flash_sale_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    flash_sale_start = models.DateTimeField(null=True, blank=True)
+    flash_sale_end = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -40,6 +55,8 @@ class Product(models.Model):
             models.Index(fields=['sku']),
             models.Index(fields=['category']),
             models.Index(fields=['is_active']),
+            models.Index(fields=['partner']),  # New index
+            models.Index(fields=['is_flash_sale']),  # New index
         ]
 
     def __str__(self):
@@ -59,3 +76,21 @@ class Product(models.Model):
             return "Low Stock"
         else:
             return "In Stock"
+    
+    @property
+    def is_on_flash_sale(self):
+        """Check if product is currently on flash sale"""
+        from django.utils import timezone
+        now = timezone.now()
+        return (
+            self.is_flash_sale and
+            self.flash_sale_price is not None and
+            self.flash_sale_start and
+            self.flash_sale_end and
+            self.flash_sale_start <= now <= self.flash_sale_end
+        )
+    
+    @property
+    def current_price(self):
+        """Get current price (flash sale price if active, else regular price)"""
+        return self.flash_sale_price if self.is_on_flash_sale else self.price

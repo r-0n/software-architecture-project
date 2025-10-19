@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'cart',
     'django_extensions',
     "orders",
+    'partner_feeds',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
