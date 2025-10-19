@@ -6,6 +6,7 @@ from .adapters import FeedAdapterFactory
 from .validators import ProductFeedValidator
 from products.models import Product, Category
 import logging
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Test JSON Product 1",
+    "sku": "JSON-001",
+    "price": 15.99,
+    "stock_quantity": 8,
+    "category": "Books"
+  },
+  {
+    "name": "Test JSON Product 2", 
+    "sku": "JSON-002",
+    "price": 25.99,
+    "stock_quantity": 12,
+    "category": "Sports"
+  }
+]

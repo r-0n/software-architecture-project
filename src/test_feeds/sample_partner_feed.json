@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Gaming Mechanical Keyboard",
+    "description": "RGB mechanical keyboard with customizable keys",
+    "sku": "KB-MECH-GAMER",
+    "price": 129.99,
+    "stock_quantity": 35,
+    "category": "Electronics",
+    "flash_sale_price": 99.99,
+    "flash_sale_start": "2024-01-14 00:00:00",
+    "flash_sale_end": "2024-01-21 23:59:59"
+  },
+  {
+    "name": "Leather Laptop Bag",
+    "description": "Genuine leather laptop bag with multiple compartments",
+    "sku": "BAG-LTP-LEATHER",
+    "price": 89.99,
+    "stock_quantity": 20,
+    "category": "Accessories",
+    "flash_sale_price": 69.99,
+    "flash_sale_start": "2024-01-16 00:00:00",
+    "flash_sale_end": "2024-01-23 23:59:59"
+  },
+  {
+    "name": "Bluetooth Portable Speaker",
+    "description": "Waterproof portable speaker with 12-hour battery",
+    "sku": "SPK-BT-PORT",
+    "price": 59.99,
+    "stock_quantity": 80,
+    "category": "Electronics"
+  },
+  {
+    "name": "Stainless Steel Cookware Set",
+    "description": "10-piece stainless steel cookware set",
+    "sku": "KITCH-SET-10",
+    "price": 199.99,
+    "stock_quantity": 15,
+    "category": "Home & Kitchen",
+    "flash_sale_price": 159.99,
+    "flash_sale_start": "2024-01-11 00:00:00",
+    "flash_sale_end": "2024-01-18 23:59:59"
+  },
+  {
+    "name": "Fitness Resistance Bands",
+    "description": "Set of 5 resistance bands for home workouts",
+    "sku": "FIT-BANDS-SET5",
+    "price": 24.99,
+    "stock_quantity": 120,
+    "category": "Sports & Fitness"
+  },
+  {
+    "name": "Desk Lamp with Wireless Charger",
+    "description": "LED desk lamp with built-in wireless phone charger",
+    "sku": "LAMP-DESK-LED",
+    "price": 44.99,
+    "stock_quantity": 45,
+    "category": "Home & Kitchen",
+    "flash_sale_price": 34.99,
+    "flash_sale_start": "2024-01-13 00:00:00",
+    "flash_sale_end": "2024-01-20 23:59:59"
+  }
+]

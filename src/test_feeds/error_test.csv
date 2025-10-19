@@ -1,0 +1,5 @@
+name,sku,price,stock_quantity,category
+,"MISSING-NAME",19.99,10,"Electronics"
+"Product No Price","NO-PRICE",,5,"Home & Kitchen"
+"Product Negative Price","NEG-PRICE",-10.99,5,"Electronics"
+"Product No SKU","",29.99,5,"Home & Kitchen"
