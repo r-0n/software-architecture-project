@@ -1,9 +1,10 @@
 """
-Business rules for cart operations in the retail management system.
-These functions implement core business logic that can be tested and reused.
+Enhanced business rules for cart operations with flash sale pricing.
+These functions implement core business logic with dual pricing calls for consistency.
 """
 
 from decimal import Decimal
+from products.services import current_effective_price
 
 
 def validate_product_for_cart(product_active, product_name):
@@ -69,26 +70,34 @@ def validate_cart_update(quantity, available_stock, product_name):
 
 def calculate_cart_total(items):
     """
-    Calculate total price for cart items.
+    Calculate total price for cart items using effective pricing.
+    This ensures consistent pricing between add-to-cart and checkout.
     
     Args:
-        items (list): List of items with 'price' and 'quantity' keys
+        items (list): List of items with 'product' and 'quantity' keys
         
     Returns:
-        Decimal: Total price
+        Decimal: Total price using effective pricing
     """
-    return sum(Decimal(str(item['price'])) * item['quantity'] for item in items)
+    total = Decimal('0.00')
+    for item in items:
+        product = item['product']
+        quantity = item['quantity']
+        effective_price = current_effective_price(product)
+        total += effective_price * quantity
+    return total
 
 
-def calculate_item_total(price, quantity):
+def calculate_item_total(product, quantity):
     """
-    Calculate total price for a single cart item.
+    Calculate total price for a single cart item using effective pricing.
     
     Args:
-        price (Decimal): Unit price
+        product: Product instance
         quantity (int): Quantity
         
     Returns:
-        Decimal: Total price for the item
+        Decimal: Total price for the item using effective pricing
     """
-    return price * quantity
+    effective_price = current_effective_price(product)
+    return effective_price * quantity

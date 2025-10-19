@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'accounts',
     'products',
     'cart',
+    'worker',  # Enhanced async processing
     'django_extensions',
     "orders",
     'partner_feeds',
@@ -136,3 +137,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Flash Sale Configuration
+FLASH_SALE_ENABLED = True
+
+# Enhanced Throttling Configuration
+FLASH_ORDER_THROTTLE_PER_USER = 5  # per user/IP per window
+FLASH_ORDER_THROTTLE_PER_USER_SECONDS = 60  # window size in seconds
+FLASH_ORDER_THROTTLE_GLOBAL = 500  # global requests per window
+FLASH_ORDER_THROTTLE_GLOBAL_SECONDS = 60  # global window size
+
+# Reservation TTL Configuration
+FLASH_ORDER_RESERVATION_TTL_MINUTES = 5  # How long to hold stock reservations

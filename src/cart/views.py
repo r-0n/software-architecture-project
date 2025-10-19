@@ -2,17 +2,30 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from products.models import Product
-from .models import Cart
-import re
-
-
-#for checkout
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.conf import settings
 from django.db import transaction
+from django.db.utils import IntegrityError
+from django.core.cache import cache
+from products.models import Product
+from products.services import current_effective_price, is_flash_sale_active, validate_price_consistency
+from .models import Cart
+from .throttle import allow_checkout
+from worker.queue import enqueue_job, create_stock_reservation
+from retail.logging import (
+    log_checkout_requested, log_checkout_throttled, log_checkout_stock_conflict,
+    log_checkout_queued, log_price_validation, log_idempotency_check, FlashSaleTimer
+)
+import re
+import json
+import uuid
 from .forms import CheckoutForm
-from orders.models import Sale, SaleItem, Payment # new models
-from retail.payment import process_payment #new payment service
-from django.db.utils import IntegrityError # for concurrent conflict on stock
+from orders.models import Sale, SaleItem, Payment
+from retail.payment import process_payment
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -204,7 +217,7 @@ def checkout(request):
                             sale=sale,
                             product=product,
                             quantity=item["quantity"],
-                            unit_price=product.price,
+                            unit_price=current_effective_price(product),
                         )
 
                 # Clear cart after successful checkout (OUTSIDE atomic block)
@@ -262,3 +275,200 @@ def checkout(request):
         "form": form,
     }
     return render(request, "cart/checkout.html", context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def flash_checkout(request):
+    """
+    Enhanced flash sale checkout with idempotency, granular throttling, 
+    minimal locking, and comprehensive observability.
+    """
+    # Check global feature flag
+    if not settings.FLASH_SALE_ENABLED:
+        return JsonResponse({
+            "status": "error", 
+            "message": "Flash sale is not currently enabled"
+        }, status=400)
+    
+    # Get user identifier for throttling
+    user_id = str(request.user.id) if request.user.is_authenticated else request.META.get('REMOTE_ADDR', 'anonymous')
+    
+    # Extract idempotency key
+    idempotency_key = request.headers.get('X-Idempotency-Key')
+    if not idempotency_key:
+        idempotency_key = str(uuid.uuid4())
+    
+    # Check for duplicate requests using idempotency key
+    cache_key = f'flash_checkout_{idempotency_key}'
+    existing_result = cache.get(cache_key)
+    if existing_result:
+        log_idempotency_check(user_id, idempotency_key, True, existing_result.get('sale_id'))
+        return JsonResponse(existing_result)
+    
+    log_idempotency_check(user_id, idempotency_key, False)
+    
+    try:
+        # Parse request data
+        data = json.loads(request.body)
+        address = data.get('address')
+        payment_method = data.get('payment_method')
+        card_number = data.get('card_number')
+        
+        if not address or not payment_method:
+            return JsonResponse({
+                "status": "error", 
+                "message": "Address and payment method are required"
+            }, status=400)
+        
+        # Get cart and validate
+        cart = Cart(request)
+        if cart.get_total_items() == 0:
+            return JsonResponse({
+                "status": "error", 
+                "message": "Your cart is empty"
+            }, status=400)
+        
+        # Check if cart contains flash sale items
+        flash_items = []
+        product_ids = []
+        for item in cart:
+            product_ids.append(item['product'].id)
+            if is_flash_sale_active(item['product']):
+                flash_items.append(item)
+        
+        if not flash_items:
+            return JsonResponse({
+                "status": "error", 
+                "message": "No flash sale items in cart"
+            }, status=400)
+        
+        # Granular throttling by user + product
+        for item in flash_items:
+            allowed, reason, retry_after = allow_checkout(user_id, item['product'].id)
+            if not allowed:
+                log_checkout_throttled(user_id, reason, retry_after, item['product'].id)
+                response = JsonResponse({
+                    "status": "throttled", 
+                    "message": reason
+                }, status=429)
+                response['Retry-After'] = str(retry_after)
+                return response
+        
+        # Global throttling
+        allowed, reason, retry_after = allow_checkout(user_id)
+        if not allowed:
+            log_checkout_throttled(user_id, reason, retry_after)
+            response = JsonResponse({
+                "status": "throttled", 
+                "message": reason
+            }, status=429)
+            response['Retry-After'] = str(retry_after)
+            return response
+        
+        # Calculate total using effective pricing
+        total = cart.get_total_price()
+        
+        # Log checkout request
+        log_checkout_requested(user_id, product_ids, float(total), idempotency_key)
+        
+        # Start timing the sync phase
+        with FlashSaleTimer('flash_checkout_sync', user_id, product_ids) as timer:
+            with transaction.atomic():
+                # Create sale record
+                sale = Sale.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    address=address,
+                    total=total,
+                    status="PENDING",
+                )
+                
+                # Create payment record
+                payment = Payment.objects.create(
+                    sale=sale,
+                    method=payment_method,
+                    reference="",
+                    amount=total,
+                    status="PENDING",
+                )
+                
+                # Process each cart item with minimal locking
+                for item in cart:
+                    product = Product.objects.select_for_update(of=['self']).get(id=item["product"].id)
+                    
+                    # Idempotent stock check - verify current available stock
+                    if product.stock_quantity < item["quantity"]:
+                        raise IntegrityError(f"Insufficient stock for {product.name}")
+                    
+                    # Create stock reservation
+                    create_stock_reservation(sale.id, product.id, item["quantity"])
+                    
+                    # Decrement stock
+                    product.stock_quantity -= item["quantity"]
+                    product.save()
+                    
+                    # Create sale item with effective pricing
+                    SaleItem.objects.create(
+                        sale=sale,
+                        product=product,
+                        quantity=item["quantity"],
+                        unit_price=current_effective_price(product),
+                    )
+                
+                # Enqueue finalization job
+                job_payload = {
+                    'sale_id': sale.id,
+                    'payment_method': payment_method,
+                    'card_number': card_number,
+                    'amount': float(total)
+                }
+                
+                job = enqueue_job('finalize_flash_order', job_payload)
+                
+                # Clear cart
+                cart.clear()
+                
+                # Calculate sync duration
+                sync_duration_ms = (time.monotonic() - timer.start_time) * 1000
+                
+                # Log successful queuing
+                log_checkout_queued(user_id, sale.id, job.id, sync_duration_ms)
+                
+                # Prepare response
+                response_data = {
+                    "status": "queued",
+                    "reference": str(sale.id),
+                    "message": "Your order is being finalized. You will receive confirmation shortly.",
+                    "job_id": job.id,
+                    "sync_duration_ms": round(sync_duration_ms, 2)
+                }
+                
+                # Cache the result for idempotency
+                cache.set(cache_key, response_data, timeout=300)  # 5 minutes
+                
+                return JsonResponse(response_data)
+                
+    except IntegrityError as e:
+        # Stock conflict - log with detailed information
+        product_name = str(e).replace("Insufficient stock for ", "")
+        log_checkout_stock_conflict(user_id, None, product_name, 0, 0)
+        
+        return JsonResponse({
+            "status": "error", 
+            "message": f"Sorry, another customer just purchased the last of '{product_name}'. Please try again."
+        }, status=409)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            "status": "error", 
+            "message": "Invalid JSON data"
+        }, status=400)
+        
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(f"Unexpected error in flash_checkout: {e}", exc_info=True)
+        
+        return JsonResponse({
+            "status": "error", 
+            "message": "An error occurred processing your order"
+        }, status=500)

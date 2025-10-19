@@ -16,4 +16,7 @@ urlpatterns = [
     path('categories/create/', views.category_create, name='category_create'),
     path('categories/<int:pk>/update/', views.category_update, name='category_update'),
     path('categories/<int:pk>/delete/', views.category_delete, name='category_delete'),
+    
+    # Flash sale URLs
+    path('flash-sale/<int:product_id>/status/', views.flash_sale_status, name='flash_sale_status'),
 ]

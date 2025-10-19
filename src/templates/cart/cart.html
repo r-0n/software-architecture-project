@@ -48,7 +48,15 @@
                                                    onchange="this.form.submit()">
                                         </form>
                                     </div>
-                                    <p class="fw-bold">${{ item.product.price|floatformat:2 }}</p>
+                                    {% if item.product.is_on_flash_sale %}
+                                        <div class="d-flex flex-column">
+                                            <p class="fw-bold text-danger">${{ item.product.flash_sale_price|floatformat:2 }}</p>
+                                            <small class="text-muted text-decoration-line-through">Regular: ${{ item.product.price|floatformat:2 }}</small>
+                                            <span class="badge bg-danger">FLASH SALE!</span>
+                                        </div>
+                                    {% else %}
+                                        <p class="fw-bold">${{ item.product.price|floatformat:2 }}</p>
+                                    {% endif %}
                                     <p class="fw-bold">Total: ${{ item.total_price|floatformat:2 }}</p>
                                     <form method="post" action="{% url 'cart:cart_remove' item.product.id %}" class="d-inline">
                                         {% csrf_token %}

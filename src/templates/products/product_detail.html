@@ -48,7 +48,17 @@
                             <dd class="col-sm-9">{{ product.category.name }}</dd>
 
                             <dt class="col-sm-3">Price:</dt>
-                            <dd class="col-sm-9"><strong>${{ product.price }}</strong></dd>
+                            <dd class="col-sm-9">
+                                {% if product.is_on_flash_sale %}
+                                    <div class="d-flex flex-column">
+                                        <strong class="text-danger fs-5">${{ product.flash_sale_price }}</strong>
+                                        <small class="text-muted text-decoration-line-through">Regular: ${{ product.price }}</small>
+                                        <span class="badge bg-danger mt-1">FLASH SALE!</span>
+                                    </div>
+                                {% else %}
+                                    <strong>${{ product.price }}</strong>
+                                {% endif %}
+                            </dd>
 
                             <dt class="col-sm-3">Stock Quantity:</dt>
                             <dd class="col-sm-9">

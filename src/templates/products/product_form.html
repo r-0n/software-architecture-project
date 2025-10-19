@@ -82,6 +82,61 @@
                         <div class="form-text">Uncheck to deactivate this product</div>
                     </div>
 
+                    <!-- Flash Sale Configuration -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Flash Sale Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.flash_sale_enabled }}
+                                    <label class="form-check-label" for="{{ form.flash_sale_enabled.id_for_label }}">
+                                        Enable Flash Sale
+                                    </label>
+                                </div>
+                                {% if form.flash_sale_enabled.errors %}
+                                    <div class="text-danger">{{ form.flash_sale_enabled.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Enable special pricing for a limited time</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.flash_sale_price.id_for_label }}" class="form-label">Flash Sale Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.flash_sale_price }}
+                                    </div>
+                                    {% if form.flash_sale_price.errors %}
+                                        <div class="text-danger">{{ form.flash_sale_price.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Special price during flash sale</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.flash_sale_starts_at.id_for_label }}" class="form-label">Flash Sale Starts At</label>
+                                    {{ form.flash_sale_starts_at }}
+                                    {% if form.flash_sale_starts_at.errors %}
+                                        <div class="text-danger">{{ form.flash_sale_starts_at.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">When the flash sale begins</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.flash_sale_ends_at.id_for_label }}" class="form-label">Flash Sale Ends At</label>
+                                    {{ form.flash_sale_ends_at }}
+                                    {% if form.flash_sale_ends_at.errors %}
+                                        <div class="text-danger">{{ form.flash_sale_ends_at.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">When the flash sale ends</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between">
                         <a href="{% if product %}{% url 'products:product_detail' product.pk %}{% else %}{% url 'products:product_list' %}{% endif %}" class="btn btn-secondary">
                             Cancel

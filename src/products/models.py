@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 
@@ -32,10 +33,12 @@ class Product(models.Model):
     stock_quantity = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     
-    # Add these new fields for partner integration and flash sales
+    # Partner integration
     partner = models.ForeignKey('partner_feeds.Partner', on_delete=models.SET_NULL, 
                                null=True, blank=True, related_name='products')
-    is_flash_sale = models.BooleanField(default=False)
+    
+    # Enhanced flash sale fields with proper naming
+    flash_sale_enabled = models.BooleanField(default=False)
     flash_sale_price = models.DecimalField(
         max_digits=10, 
         decimal_places=2,
@@ -43,8 +46,8 @@ class Product(models.Model):
         blank=True,
         validators=[MinValueValidator(Decimal('0.01'))]
     )
-    flash_sale_start = models.DateTimeField(null=True, blank=True)
-    flash_sale_end = models.DateTimeField(null=True, blank=True)
+    flash_sale_starts_at = models.DateTimeField(null=True, blank=True)
+    flash_sale_ends_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -55,9 +58,40 @@ class Product(models.Model):
             models.Index(fields=['sku']),
             models.Index(fields=['category']),
             models.Index(fields=['is_active']),
-            models.Index(fields=['partner']),  # New index
-            models.Index(fields=['is_flash_sale']),  # New index
+            models.Index(fields=['partner']),
+            models.Index(fields=['flash_sale_enabled']),  # For efficient active sales listing
         ]
+        constraints = [
+            # Conditional constraint: only enforce when all flash fields are set and enabled
+            models.CheckConstraint(
+                check=models.Q(
+                    # Either flash sale is disabled, OR all required fields are present
+                    models.Q(flash_sale_enabled=False) |
+                    models.Q(
+                        flash_sale_enabled=True,
+                        flash_sale_price__isnull=False,
+                        flash_sale_starts_at__isnull=False,
+                        flash_sale_ends_at__isnull=False,
+                        flash_sale_starts_at__lt=models.F('flash_sale_ends_at')
+                    )
+                ),
+                name='flash_sale_time_order'
+            ),
+        ]
+
+    def clean(self):
+        """Enhanced validation for flash sale fields"""
+        super().clean()
+        
+        if self.flash_sale_enabled:
+            if not self.flash_sale_price:
+                raise ValidationError("Flash sale price is required when flash sale is enabled")
+            if not self.flash_sale_starts_at:
+                raise ValidationError("Flash sale start time is required when flash sale is enabled")
+            if not self.flash_sale_ends_at:
+                raise ValidationError("Flash sale end time is required when flash sale is enabled")
+            if self.flash_sale_starts_at and self.flash_sale_ends_at and self.flash_sale_starts_at >= self.flash_sale_ends_at:
+                raise ValidationError("Flash sale start time must be before end time")
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
@@ -83,11 +117,11 @@ class Product(models.Model):
         from django.utils import timezone
         now = timezone.now()
         return (
-            self.is_flash_sale and
+            self.flash_sale_enabled and
             self.flash_sale_price is not None and
-            self.flash_sale_start and
-            self.flash_sale_end and
-            self.flash_sale_start <= now <= self.flash_sale_end
+            self.flash_sale_starts_at and
+            self.flash_sale_ends_at and
+            self.flash_sale_starts_at <= now <= self.flash_sale_ends_at
         )
     
     @property

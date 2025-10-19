@@ -1,5 +1,6 @@
 from django.db import models
 from products.models import Product
+from products.services import current_effective_price
 
 
 class CartItem(models.Model):
@@ -20,8 +21,9 @@ class CartItem(models.Model):
 
     @property
     def total_price(self):
-        """Calculate total price for this cart item"""
-        return self.product.price * self.quantity
+        """Calculate total price for this cart item using effective pricing"""
+        effective_price = current_effective_price(self.product)
+        return effective_price * self.quantity
 
 
 class Cart:
@@ -79,9 +81,10 @@ class Cart:
             else:
                 if quantity > product.stock_quantity:
                     raise ValueError(f"Cannot add {quantity} {product.name}(s). Only {product.stock_quantity} available in stock.")
+                effective_price = current_effective_price(product)
                 self.cart[product_id] = {
                     'quantity': quantity,
-                    'price': str(product.price)
+                    'price': str(effective_price)
                 }
             
             self.save()
@@ -157,10 +160,11 @@ class Cart:
             # User is logged in - iterate over database items
             cart_items = CartItem.objects.filter(user=self.user)
             for cart_item in cart_items:
+                effective_price = current_effective_price(cart_item.product)
                 yield {
                     'product': cart_item.product,
                     'quantity': cart_item.quantity,
-                    'price': str(cart_item.product.price),
+                    'price': str(effective_price),
                     'total_price': cart_item.total_price
                 }
         else:
@@ -172,8 +176,10 @@ class Cart:
                 self.cart[str(product.id)]['product'] = product
             
             for item in self.cart.values():
-                # Calculate total price for this item
-                item['total_price'] = float(item['price']) * item['quantity']
+                # Recalculate effective price in case it changed (e.g., flash sale ended)
+                effective_price = current_effective_price(item['product'])
+                item['price'] = str(effective_price)
+                item['total_price'] = float(effective_price) * item['quantity']
                 yield item
 
     def __len__(self):
