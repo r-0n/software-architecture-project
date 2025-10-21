@@ -39,3 +39,10 @@ src/products/migrations/__pycache__/
 src/cart/migrations/__pycache__/
 src/orders/migrations/__pycache__/
 *.pyc
+*.pyc
+*.pyc
+*.pyc
+*.pyc
+src/accounts/__pycache__/views.cpython-313.pyc
+src/products/__pycache__/forms.cpython-313.pyc
+src/products/__pycache__/views.cpython-313.pyc
