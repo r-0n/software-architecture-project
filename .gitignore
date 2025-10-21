@@ -38,3 +38,4 @@ src/accounts/migrations/__pycache__/
 src/products/migrations/__pycache__/
 src/cart/migrations/__pycache__/
 src/orders/migrations/__pycache__/
+*.pyc

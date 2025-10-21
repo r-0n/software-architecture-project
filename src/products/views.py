@@ -53,6 +53,9 @@ def product_list(request):
                     flash_sale_starts_at__lte=now,
                     flash_sale_ends_at__gte=now
                 )
+    else:
+        # If form is invalid, don't apply any filters (show all products)
+        pass
     
     # Pagination
     paginator = Paginator(products, 10)  # Show 10 products per page
@@ -93,7 +96,7 @@ def product_create(request):
         form = ProductForm(request.POST)
         if form.is_valid():
             product = form.save()
-            messages.success(request, f'Product "{product.name}" created successfully!')
+            messages.success(request, f'✅ Product "{product.name}" created successfully!')
             return redirect('products:product_detail', pk=product.pk)
     else:
         form = ProductForm()
@@ -114,7 +117,7 @@ def product_update(request, pk):
         form = ProductForm(request.POST, instance=product)
         if form.is_valid():
             product = form.save()
-            messages.success(request, f'Product "{product.name}" updated successfully!')
+            messages.success(request, f'✅ Product "{product.name}" updated successfully!')
             return redirect('products:product_detail', pk=product.pk)
     else:
         form = ProductForm(instance=product)
@@ -138,12 +141,12 @@ def product_delete(request, pk):
         try:
             # Try to delete the product
             product.delete()
-            messages.success(request, f'Product "{product_name}" deleted successfully!')
+            messages.success(request, f'✅ Product "{product_name}" deleted successfully!')
         except ProtectedError:
             # If deletion fails (due to protected foreign keys), deactivate instead
             product.is_active = False
             product.save()
-            messages.warning(request, f'Product "{product_name}" could not be deleted because it has been ordered. It has been deactivated instead.')
+            messages.warning(request, f'⚠️ Product "{product_name}" could not be deleted because it has been ordered. It has been deactivated instead.')
         
         return redirect('products:product_list')
     
@@ -179,7 +182,7 @@ def category_create(request):
         form = CategoryForm(request.POST)
         if form.is_valid():
             category = form.save()
-            messages.success(request, f'Category "{category.name}" created successfully!')
+            messages.success(request, f'✅ Category "{category.name}" created successfully!')
             return redirect('products:category_list')
     else:
         form = CategoryForm()
@@ -200,7 +203,7 @@ def category_update(request, pk):
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
             category = form.save()
-            messages.success(request, f'Category "{category.name}" updated successfully!')
+            messages.success(request, f'✅ Category "{category.name}" updated successfully!')
             return redirect('products:category_list')
     else:
         form = CategoryForm(instance=category)
@@ -221,7 +224,7 @@ def category_delete(request, pk):
     if request.method == 'POST':
         category_name = category.name
         category.delete()
-        messages.success(request, f'Category "{category_name}" deleted successfully!')
+        messages.success(request, f'✅ Category "{category_name}" deleted successfully!')
         return redirect('products:category_list')
     
     context = {

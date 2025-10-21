@@ -123,9 +123,9 @@
                                             <div class="d-flex gap-2 align-items-center">
                                                 <a href="{% url 'products:product_detail' product.pk %}" class="btn btn-outline-info btn-sm">View</a>
                                                 {% if product.is_active and product.stock_quantity > 0 %}
-                                                    <form method="post" action="{% url 'cart:cart_add' product.id %}" class="d-flex gap-1">
+                                                    <form method="post" action="{% url 'cart:cart_add' product.id %}" class="d-flex gap-1" onsubmit="return validateQuantity(this)">
                                                         {% csrf_token %}
-                                                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" class="form-control form-control-sm" style="width: 70px;" title="Max: {{ product.stock_quantity }} available">
+                                                        <input type="text" name="quantity" value="1" max="{{ product.stock_quantity }}" class="form-control form-control-sm" style="width: 70px;" title="Max: {{ product.stock_quantity }} available" inputmode="numeric">
                                                         {% if product.stock_quantity <= 5 %}
                                                             <button type="submit" class="btn btn-warning btn-sm" title="⚠️ Low Stock: Only {{ product.stock_quantity }} left!">Add to Cart</button>
                                                         {% else %}
@@ -260,4 +260,75 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+function showCustomToast(message, type = 'error') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white border-0 ${type === 'error' ? 'bg-danger' : 'bg-success'}`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.setAttribute('data-bs-autohide', 'true');
+    toastElement.setAttribute('data-bs-delay', '5000');
+    
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to container and show
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Remove element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+function validateQuantity(form) {
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const quantity = quantityInput.value.trim();
+    
+    if (!quantity) {
+        showCustomToast('⚠️ Please enter a quantity to add this item to your cart.');
+        quantityInput.focus();
+        return false;
+    }
+    
+    const quantityNum = parseInt(quantity);
+    if (isNaN(quantityNum) || quantityNum < 1) {
+        showCustomToast('⚠️ Please enter a valid quantity (at least 1).');
+        quantityInput.focus();
+        return false;
+    }
+    
+    const maxQuantity = parseInt(quantityInput.max);
+    if (quantityNum > maxQuantity) {
+        showCustomToast(`⚠️ Quantity cannot exceed ${maxQuantity} (available stock).`);
+        quantityInput.focus();
+        return false;
+    }
+    
+    return true;
+}
+</script>
 {% endblock %}

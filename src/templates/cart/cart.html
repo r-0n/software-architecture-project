@@ -35,17 +35,16 @@
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center mb-2">
                                         <label for="quantity-{{ item.product.id }}" class="form-label me-2">Qty:</label>
-                                        <form method="post" action="{% url 'cart:cart_update' item.product.id %}" class="d-inline">
+                                        <form method="post" action="{% url 'cart:cart_update' item.product.id %}" class="d-inline" onsubmit="return validateCartQuantity(this)">
                                             {% csrf_token %}
-                                            <input type="number" 
+                                            <input type="text" 
                                                    id="quantity-{{ item.product.id }}" 
                                                    name="quantity" 
                                                    value="{{ item.quantity }}" 
-                                                   min="1" 
                                                    max="{{ item.product.stock_quantity }}"
                                                    class="form-control form-control-sm" 
                                                    style="width: 80px;"
-                                                   onchange="this.form.submit()">
+                                                   inputmode="numeric">
                                         </form>
                                     </div>
                                     {% if item.product.is_on_flash_sale %}
@@ -143,4 +142,148 @@
         </div>
     </div>
 </div>
+
+<script>
+function showCustomConfirmToast(message, onConfirm, onCancel) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create confirmation toast element
+    const toastElement = document.createElement('div');
+    toastElement.className = 'toast align-items-center text-white border-0 bg-warning';
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.setAttribute('data-bs-autohide', 'false'); // Don't auto-hide confirmation
+    
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong>⚠️ Confirmation Required</strong><br>
+                ${message}
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-light me-2" onclick="confirmAction()">Yes</button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="cancelAction()">No</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add to container and show
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: false
+    });
+    toast.show();
+    
+    // Define action functions
+    window.confirmAction = function() {
+        toast.hide();
+        if (onConfirm) onConfirm();
+    };
+    
+    window.cancelAction = function() {
+        toast.hide();
+        if (onCancel) onCancel();
+    };
+    
+    // Remove element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+        delete window.confirmAction;
+        delete window.cancelAction;
+    });
+}
+
+function showCustomToast(message, type = 'error') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white border-0 ${type === 'error' ? 'bg-danger' : 'bg-success'}`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.setAttribute('data-bs-autohide', 'true');
+    toastElement.setAttribute('data-bs-delay', '5000');
+    
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to container and show
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Remove element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+function validateCartQuantity(form) {
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const quantity = quantityInput.value.trim();
+    
+    if (!quantity) {
+        showCustomToast('⚠️ Please enter a quantity to update your cart.');
+        quantityInput.focus();
+        return false;
+    }
+    
+    const quantityNum = parseInt(quantity);
+    if (isNaN(quantityNum) || quantityNum < 0) {
+        showCustomToast('⚠️ Please enter a valid quantity (0 or greater).');
+        quantityInput.focus();
+        return false;
+    }
+    
+    const maxQuantity = parseInt(quantityInput.max);
+    if (quantityNum > maxQuantity) {
+        showCustomToast(`⚠️ Quantity cannot exceed ${maxQuantity} (available stock).`);
+        quantityInput.focus();
+        return false;
+    }
+    
+    // If quantity is 0, confirm removal
+    if (quantityNum === 0) {
+        showCustomConfirmToast(
+            'Setting quantity to 0 will remove this item from your cart. Continue?',
+            function() {
+                // User confirmed, allow form submission
+                form.submit();
+            },
+            function() {
+                // User cancelled, reset to minimum
+                quantityInput.value = 1;
+            }
+        );
+        return false; // Prevent immediate form submission
+    }
+    
+    return true;
+}
+</script>
 {% endblock %}

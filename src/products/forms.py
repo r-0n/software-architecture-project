@@ -112,6 +112,15 @@ class ProductSearchForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ensure the category queryset is always available
+        try:
+            self.fields['category'].queryset = Category.objects.all()
+        except Exception:
+            # If there's an issue with categories, use an empty queryset
+            self.fields['category'].queryset = Category.objects.none()
 
 
 class CategoryForm(forms.ModelForm):

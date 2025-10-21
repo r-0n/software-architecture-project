@@ -44,10 +44,26 @@ def cart_view(request):
 def cart_add(request, product_id):
     """Add product to cart"""
     product = get_object_or_404(Product, id=product_id)
-    quantity = int(request.POST.get('quantity', 1))
+    
+    # Safely get quantity with proper validation
+    quantity_str = request.POST.get('quantity', '1').strip()
+    if not quantity_str:
+        messages.error(request, '⚠️ Please enter a quantity to add this item to your cart.')
+        return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
+    
+    try:
+        quantity = int(quantity_str)
+    except ValueError:
+        messages.error(request, '⚠️ Please enter a valid number for quantity.')
+        return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
+    
+    # Validate quantity is positive
+    if quantity <= 0:
+        messages.error(request, '⚠️ Quantity must be greater than 0 to add items to your cart.')
+        return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
     
     if not product.is_active:
-        messages.error(request, 'This product is not available for purchase.')
+        messages.error(request, '⚠️ This product is not available for purchase.')
         return redirect('products:product_detail', pk=product_id)
     
     cart = Cart(request)
@@ -72,16 +88,16 @@ def cart_add(request, product_id):
     if total_quantity > product.stock_quantity:
         available_to_add = product.stock_quantity - current_quantity
         if available_to_add <= 0:
-            messages.error(request, f'Cannot add more {product.name}! You already have all {product.stock_quantity} available items in your cart. Please remove some items first or check back later for restocking.')
+            messages.error(request, f'⚠️ Cannot add more {product.name}! You already have all {product.stock_quantity} available items in your cart. Please remove some items first or check back later for restocking.')
         else:
             messages.error(request, f'⚠️ Cannot add {quantity} more {product.name}(s). You can only add {available_to_add} more (you have {current_quantity} in cart, {product.stock_quantity} total available).')
         return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
     
     try:
         cart.add(product, quantity)
-        messages.success(request, f'{product.name} added to cart!')
+        messages.success(request, f'✅ {product.name} added to cart! ({quantity} item{"s" if quantity > 1 else ""})')
     except ValueError as e:
-        messages.error(request, str(e))
+        messages.error(request, f'⚠️ {str(e)}')
     
     # Redirect back to the page they came from
     return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
@@ -92,14 +108,32 @@ def cart_remove(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     cart = Cart(request)
     cart.remove(product)
-    messages.success(request, f'{product.name} removed from cart!')
+    messages.success(request, f'✅ {product.name} removed from cart!')
     return redirect('cart:cart_view')
 
 
 def cart_update(request, product_id):
     """Update product quantity in cart"""
     product = get_object_or_404(Product, id=product_id)
-    quantity = int(request.POST.get('quantity', 1))
+    
+    # Safely get quantity with proper validation
+    quantity_str = request.POST.get('quantity', '1').strip()
+    if not quantity_str:
+        messages.error(request, '⚠️ Please enter a quantity to update your cart.')
+        return redirect('cart:cart_view')
+    
+    try:
+        quantity = int(quantity_str)
+    except ValueError:
+        messages.error(request, '⚠️ Please enter a valid number for quantity.')
+        return redirect('cart:cart_view')
+    
+    # Handle zero quantity by removing the item
+    if quantity <= 0:
+        cart = Cart(request)
+        cart.remove(product)
+        messages.success(request, f'✅ {product.name} removed from cart!')
+        return redirect('cart:cart_view')
     
     if quantity > product.stock_quantity:
         messages.error(request, f'⚠️ Cannot update quantity to {quantity}. Only {product.stock_quantity} {product.name}(s) available in stock. Please reduce the quantity.')
@@ -108,9 +142,9 @@ def cart_update(request, product_id):
     cart = Cart(request)
     try:
         cart.update(product, quantity)
-        messages.success(request, f'Cart updated!')
+        messages.success(request, f'✅ Cart updated! {product.name} quantity set to {quantity}.')
     except ValueError as e:
-        messages.error(request, str(e))
+        messages.error(request, f'⚠️ {str(e)}')
     return redirect('cart:cart_view')
 
 
@@ -118,7 +152,7 @@ def cart_clear(request):
     """Clear entire cart"""
     cart = Cart(request)
     cart.clear()
-    messages.success(request, 'Cart cleared!')
+    messages.success(request, '✅ Cart cleared! All items removed.')
     
     # Redirect back to the page they came from, default to products page
     return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
@@ -137,7 +171,7 @@ def cart_count(request):
 def checkout(request):
     cart = Cart(request)
     if cart.get_total_items() == 0:
-        messages.error(request, "Your cart is empty.")
+        messages.error(request, "⚠️ Your cart is empty.")
         return redirect("cart:cart_view")
 
     if request.method == "POST":
@@ -172,11 +206,11 @@ def checkout(request):
                 reason = result.get("reason", "Unknown error")
                 
                 if result["status"] == "failed":
-                    messages.error(request, f"Payment failed: {reason}. Please check your details and try again.")
+                    messages.error(request, f"⚠️ Payment failed: {reason}. Please check your details and try again.")
                 elif result["status"] == "declined":
-                    messages.error(request, f"Payment declined: {reason}. Please try a different payment method or contact your bank.")
+                    messages.error(request, f"⚠️ Payment declined: {reason}. Please try a different payment method or contact your bank.")
                 else:
-                    messages.error(request, "Payment failed. Please try again.")
+                    messages.error(request, "⚠️ Payment failed. Please try again.")
                 
                 # Log the payment attempt (in a real system, this would go to a proper logging system)
                 # TODO: Implement proper logging system

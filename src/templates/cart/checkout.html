@@ -50,16 +50,75 @@
     paymentSelect.addEventListener("change", toggleCardField);
     document.addEventListener("DOMContentLoaded", toggleCardField);
 
-    function confirmCancel() {
-        if (confirm("Are you sure you want to cancel the payment? Your cart will be discarded.")) {
-            clearCartAndRedirect();
+    function showCustomConfirmToast(message, onConfirm, onCancel) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '1050';
+            document.body.appendChild(toastContainer);
         }
+        
+        // Create confirmation toast element
+        const toastElement = document.createElement('div');
+        toastElement.className = 'toast align-items-center text-white border-0 bg-warning';
+        toastElement.setAttribute('role', 'alert');
+        toastElement.setAttribute('aria-live', 'assertive');
+        toastElement.setAttribute('aria-atomic', 'true');
+        toastElement.setAttribute('data-bs-autohide', 'false'); // Don't auto-hide confirmation
+        
+        toastElement.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>⚠️ Confirmation Required</strong><br>
+                    ${message}
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-light me-2" onclick="confirmAction()">Yes</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="cancelAction()">No</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add to container and show
+        toastContainer.appendChild(toastElement);
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: false
+        });
+        toast.show();
+        
+        // Define action functions
+        window.confirmAction = function() {
+            toast.hide();
+            if (onConfirm) onConfirm();
+        };
+        
+        window.cancelAction = function() {
+            toast.hide();
+            if (onCancel) onCancel();
+        };
+        
+        // Remove element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            toastElement.remove();
+            delete window.confirmAction;
+            delete window.cancelAction;
+        });
+    }
+
+    function confirmCancel() {
+        showCustomConfirmToast(
+            "Are you sure you want to cancel the payment? Your cart will be discarded.",
+            clearCartAndRedirect
+        );
     }
 
     function confirmBackToCart() {
-        if (confirm("Are you sure you want to go back? Your cart will be discarded.")) {
-            clearCartAndRedirect();
-        }
+        showCustomConfirmToast(
+            "Are you sure you want to go back? Your cart will be discarded.",
+            clearCartAndRedirect
+        );
     }
 
     function clearCartAndRedirect() {

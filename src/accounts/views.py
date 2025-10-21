@@ -15,7 +15,7 @@ class RegisterView(CreateView):
     
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, 'Registration successful! Please log in.')
+        messages.success(self.request, '✅ Registration successful! Please log in.')
         return response
 
 
@@ -36,12 +36,12 @@ def login_view(request):
                 user = authenticate(request, username=user_obj.username, password=password)
                 if user is not None:
                     login(request, user)
-                    messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+                    messages.success(request, f'✅ Welcome back, {user.first_name or user.username}!')
                     return redirect('products:product_list')
                 else:
-                    messages.error(request, 'Invalid email or password.')
+                    messages.error(request, '⚠️ Invalid email or password.')
             except User.DoesNotExist:
-                messages.error(request, 'No account found with this email address.')
+                messages.error(request, '⚠️ No account found with this email address.')
     else:
         form = UserLoginForm()
     
@@ -51,7 +51,7 @@ def login_view(request):
 @login_required
 def logout_view(request):
     logout(request)
-    messages.info(request, 'You have been logged out successfully.')
+    messages.info(request, 'ℹ️ You have been logged out successfully.')
     return redirect('accounts:login')
 
 
