@@ -674,3 +674,22 @@ class OrderProcessingRobustnessTest(TransactionTestCase):
         finally:
             # Clean up logging handler
             root_logger.removeHandler(handler)
+    
+    def test_csrf_protection_on_flash_checkout(self):
+        """Test that flash checkout enforces CSRF protection"""
+        # Test CSRF protection by making request without CSRF token
+        response = self.client.post('/cart/flash-checkout/', 
+            json.dumps({
+                'address': '123 CSRF Test Street',
+                'payment_method': 'CARD',
+                'card_number': '1234567890123456'
+            }),
+            content_type='application/json'
+        )
+        
+        # Should get 403 Forbidden due to missing CSRF token
+        self.assertEqual(response.status_code, 403)
+        
+        # Verify no sale was created
+        sale = Sale.objects.filter(user=self.user).first()
+        self.assertIsNone(sale)
