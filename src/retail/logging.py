@@ -155,3 +155,74 @@ def log_idempotency_check(user_id: str, idempotency_key: str, is_duplicate: bool
         'existing_sale_id': existing_sale_id,
         'timestamp': timezone.now().isoformat()
     })
+
+
+# Payment Resilience Logging Functions
+
+def log_payment_attempt(order_id: int, attempt_no: int, latency_ms: int, 
+                        breaker_state: str, outcome: str, error: str = None):
+    """Log payment attempt with resilience metrics"""
+    extra_data = {
+        'event': 'payment_attempt',
+        'order_id': order_id,
+        'attempt_no': attempt_no,
+        'latency_ms': latency_ms,
+        'breaker_state': breaker_state,
+        'outcome': outcome,
+        'timestamp': timezone.now().isoformat()
+    }
+    
+    if error:
+        extra_data['error'] = error
+    
+    if outcome == 'success':
+        logger.info("payments.attempt", extra=extra_data)
+    elif outcome == 'failure':
+        logger.warning("payments.attempt", extra=extra_data)
+    elif outcome == 'circuit_open':
+        logger.error("payments.attempt", extra=extra_data)
+    else:
+        logger.info("payments.attempt", extra=extra_data)
+
+
+def log_breaker_transition(circuit_name: str, from_state: str, to_state: str):
+    """Log circuit breaker state transition"""
+    logger.info("payments.breaker_transition", extra={
+        'event': 'breaker_transition',
+        'circuit_name': circuit_name,
+        'from_state': from_state,
+        'to_state': to_state,
+        'timestamp': timezone.now().isoformat()
+    })
+
+
+def log_checkout_rollback(order_id: int, reason: str, circuit_state: str = None, 
+                         attempts: int = None, error: str = None):
+    """Log checkout atomic rollback"""
+    extra_data = {
+        'event': 'checkout_rollback',
+        'order_id': order_id,
+        'reason': reason,
+        'timestamp': timezone.now().isoformat()
+    }
+    
+    if circuit_state:
+        extra_data['circuit_state'] = circuit_state
+    if attempts:
+        extra_data['attempts'] = attempts
+    if error:
+        extra_data['error'] = error
+    
+    logger.warning("checkout.atomic.rollback", extra=extra_data)
+
+
+def log_checkout_commit(order_id: int, provider_ref: str, attempts: int, latency_ms: int):
+    """Log successful checkout commit"""
+    logger.info("checkout.atomic.commit", extra={
+        'event': 'checkout_commit',
+        'order_id': order_id,
+        'provider_ref': provider_ref,
+        'attempts': attempts,
+        'latency_ms': latency_ms,
+        'timestamp': timezone.now().isoformat()
+    })

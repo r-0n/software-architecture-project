@@ -17,7 +17,9 @@ from retail.logging import (
     log_checkout_requested, log_checkout_throttled, log_checkout_stock_conflict,
     log_checkout_queued, log_price_validation, log_idempotency_check, FlashSaleTimer
 )
+from payments.service import charge_with_resilience
 import re
+import logging
 import json
 import uuid
 from .forms import CheckoutForm
@@ -199,79 +201,127 @@ def checkout(request):
             card_number = form.cleaned_data["card_number"]
             total = cart.get_total_price()
 
-            # Step 6: Process payment (mock)
-            result = process_payment(payment_method, float(total), card_number)
-            if result["status"] != "approved":
-                # A4. Payment Failure/Decline - detailed error handling
-                reason = result.get("reason", "Unknown error")
-                
-                if result["status"] == "failed":
-                    messages.error(request, f"⚠️ Payment failed: {reason}. Please check your details and try again.")
-                elif result["status"] == "declined":
-                    messages.error(request, f"⚠️ Payment declined: {reason}. Please try a different payment method or contact your bank.")
-                else:
-                    messages.error(request, "⚠️ Payment failed. Please try again.")
-                
-                # Log the payment attempt (in a real system, this would go to a proper logging system)
-                # TODO: Implement proper logging system
-                return redirect("cart:checkout")
-
-            # Use atomic transaction ONLY for the database operations
+            # Use atomic transaction with savepoint for rollback capability
             try:
                 with transaction.atomic():
-                    # Step 7 + 8: Save sale + decrement stock atomically
+                    # Create savepoint for potential rollback
+                    savepoint = transaction.savepoint()
+                    
+                    # Step 1: Create order/sale record first
                     sale = Sale.objects.create(
                         user=request.user,
                         address=address,
                         total=total,
-                        status="COMPLETED",
+                        status="pending",  # Start as pending
                     )
-
-                    # Create payment record
-                    Payment.objects.create(
-                        sale=sale,
-                        method=payment_method,
-                        reference=result["reference"],
-                        amount=total,
-                        status="COMPLETED",
-                    )
-
-                    for item in cart:
-                        # 🔑 Use select_for_update to lock product rows
-                        product = Product.objects.select_for_update().get(id=item["product"].id)
-
-                        if product.stock_quantity < item["quantity"]:
-                            # 8a. Concurrency conflict: not enough stock at commit
-                            raise IntegrityError(f"Insufficient stock for {product.name}")
-
-                        product.stock_quantity -= item["quantity"]
-                        product.save()
-
-                        SaleItem.objects.create(
+                    
+                    # Step 2: Process payment with resilience patterns
+                    try:
+                        payment_result = charge_with_resilience(sale, total, timeout_s=2.0)
+                    except Exception as e:
+                        # Handle any unexpected exceptions from payment service
+                        transaction.savepoint_rollback(savepoint)
+                        
+                        logger.warning("checkout.atomic.rollback", extra={
+                            "order_id": sale.id,
+                            "reason": "payment_service_exception",
+                            "error": str(e),
+                            "exception_type": type(e).__name__
+                        })
+                        
+                        messages.error(request, "⚠️ Payment service error. Please try again.")
+                        return redirect("cart:checkout")
+                    
+                    if payment_result["status"] == "ok":
+                        # Payment successful - commit the transaction
+                        provider_ref = payment_result["provider_ref"]
+                        
+                        # Update sale status to paid
+                        sale.status = "paid"
+                        sale.save()
+                        
+                        # Create payment record with provider reference
+                        Payment.objects.create(
                             sale=sale,
-                            product=product,
-                            quantity=item["quantity"],
-                            unit_price=current_effective_price(product),
+                            method=payment_method,
+                            reference=provider_ref,
+                            amount=total,
+                            status="COMPLETED",
                         )
+                        
+                        # Process inventory and sale items
+                        for item in cart:
+                            # Use select_for_update to lock product rows
+                            product = Product.objects.select_for_update().get(id=item["product"].id)
+
+                            if product.stock_quantity < item["quantity"]:
+                                # Concurrency conflict: not enough stock at commit
+                                raise IntegrityError(f"Insufficient stock for {product.name}")
+
+                            product.stock_quantity -= item["quantity"]
+                            product.save()
+
+                            SaleItem.objects.create(
+                                sale=sale,
+                                product=product,
+                                quantity=item["quantity"],
+                                unit_price=current_effective_price(product),
+                            )
+                        
+                        # Commit transaction (implicit with successful atomic block)
+                        logger.info("checkout.atomic.commit", extra={
+                            "order_id": sale.id,
+                            "provider_ref": provider_ref,
+                            "attempts": payment_result.get("attempts", 1),
+                            "latency_ms": payment_result.get("latency_ms", 0)
+                        })
+                        
+                    elif payment_result["status"] == "unavailable":
+                        # Circuit breaker is open - rollback to savepoint
+                        transaction.savepoint_rollback(savepoint)
+                        
+                        logger.warning("checkout.atomic.rollback", extra={
+                            "order_id": sale.id,
+                            "reason": "circuit_breaker_open",
+                            "circuit_state": payment_result.get("circuit_breaker_state", "unknown")
+                        })
+                        
+                        messages.error(request, "⚠️ Payment service is temporarily unavailable. Please try again in a few minutes.")
+                        return redirect("cart:checkout")
+                        
+                    else:
+                        # Payment failed - rollback to savepoint
+                        transaction.savepoint_rollback(savepoint)
+                        
+                        logger.warning("checkout.atomic.rollback", extra={
+                            "order_id": sale.id,
+                            "reason": "payment_failure",
+                            "attempts": payment_result.get("attempts", 1),
+                            "error": payment_result.get("error", "unknown")
+                        })
+                        
+                        messages.error(request, "⚠️ Payment failed. Please check your details and try again.")
+                        return redirect("cart:checkout")
 
                 # Clear cart after successful checkout (OUTSIDE atomic block)
                 cart.clear()
-                messages.success(request, "Checkout successful! Your order has been placed.")
+                messages.success(request, "✅ Checkout successful! Your order has been placed.")
                 return redirect("orders:order_detail", order_id=sale.id)
 
             except IntegrityError as e:
-                # A5. Concurrency Conflict on Stock
-                # Log conflict (in real life → monitoring/alert system)
-                # TODO: Implement proper logging system
-
-                # Clear the cart (OUTSIDE atomic block - this is now safe)
+                # Concurrency conflict on stock - rollback handled by atomic block
+                logger.warning("checkout.atomic.rollback", extra={
+                    "order_id": sale.id if 'sale' in locals() else None,
+                    "reason": "stock_conflict",
+                    "error": str(e)
+                })
+                
+                # Clear the cart (OUTSIDE atomic block)
                 cart_cleared = False
                 try:
-                    # Create a fresh cart instance to ensure we're working with current data
                     fresh_cart = Cart(request)
                     fresh_cart.clear()
                     
-                    # Double-check: Force clear cart items directly from database
                     if request.user.is_authenticated:
                         from cart.models import CartItem
                         CartItem.objects.filter(user=request.user).delete()
@@ -285,18 +335,16 @@ def checkout(request):
                 if "Insufficient stock for" in error_message:
                     product_name = error_message.replace("Insufficient stock for ", "")
                     if cart_cleared:
-                        user_message = f"Sorry, another customer just purchased the last of '{product_name}'. Your payment has been voided and your cart has been cleared. Please try again later."
+                        user_message = f"⚠️ Sorry, another customer just purchased the last of '{product_name}'. Your cart has been cleared. Please try again later."
                     else:
-                        user_message = f"Sorry, another customer just purchased the last of '{product_name}'. Your payment has been voided. Please check your cart and try again later."
+                        user_message = f"⚠️ Sorry, another customer just purchased the last of '{product_name}'. Please check your cart and try again later."
                 else:
                     if cart_cleared:
-                        user_message = "Sorry, another customer just purchased the last of this item. Your payment has been voided and your cart has been cleared. Please try again later."
+                        user_message = "⚠️ Sorry, another customer just purchased the last of this item. Your cart has been cleared. Please try again later."
                     else:
-                        user_message = "Sorry, another customer just purchased the last of this item. Your payment has been voided. Please check your cart and try again later."
+                        user_message = "⚠️ Sorry, another customer just purchased the last of this item. Please check your cart and try again later."
                 
                 messages.error(request, user_message)
-                
-                # Redirect to products page instead of cart view to avoid confusion
                 return redirect("products:product_list")
 
     else:

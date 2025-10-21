@@ -9,7 +9,7 @@ BUSINESS LOGIC TESTS:
 - Price calculation logic
 """
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 from decimal import Decimal
 from unittest.mock import patch
 from django.core.exceptions import ValidationError
@@ -50,7 +50,7 @@ class PaymentProcessingBusinessLogicTest(SimpleTestCase):
             self.assertEqual(result['reference'], 'CARD-1234')
 
 
-class CartBusinessRulesTest(SimpleTestCase):
+class CartBusinessRulesTest(TestCase):
     """BUSINESS LOGIC: Test cart business rules"""
     
     def test_stock_validation_business_rules(self):
@@ -70,8 +70,18 @@ class CartBusinessRulesTest(SimpleTestCase):
     def test_price_calculation_business_rules(self):
         """BUSINESS LOGIC: Test price calculation business rules"""
         from cart.business_rules import calculate_item_total
+        from products.models import Product, Category
         
-        total = calculate_item_total(Decimal('29.99'), 3)
+        # Create a test product
+        category = Category.objects.create(name="Test Category")
+        product = Product.objects.create(
+            name="Test Product",
+            price=Decimal('29.99'),
+            category=category,
+            stock_quantity=10
+        )
+        
+        total = calculate_item_total(product, 3)
         expected = Decimal('89.97')
         self.assertEqual(total, expected)
     

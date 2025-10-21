@@ -149,3 +149,15 @@ FLASH_ORDER_THROTTLE_GLOBAL_SECONDS = 60  # global window size
 
 # Reservation TTL Configuration
 FLASH_ORDER_RESERVATION_TTL_MINUTES = 5  # How long to hold stock reservations
+
+# Payment Gateway Configuration
+PAYMENT_GATEWAY_TIMEOUT_SECONDS = 2
+
+# Circuit Breaker Configuration
+CIRCUIT_BREAKER = {
+    "payment_gateway": {
+        "threshold": 5,      # Number of failures to open circuit
+        "window_s": 60,     # Rolling window size in seconds
+        "cool_off_s": 60    # Cool-off period in seconds
+    }
+}

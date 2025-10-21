@@ -129,11 +129,28 @@ python manage.py createsuperuser
 python run_tests.py
 ```
 
-### Test Coverage (24 total tests)
+### Test Coverage (39 total tests)
 - **Business Logic Tests (9)**: Payment processing, cart rules, stock validation
 - **Database Integration Tests (15)**: CartItem operations, checkout flow, atomic transactions
+- **Order Robustness Tests (15)**: 
+  - Happy path (success)
+  - Retry then success (transient failure recovery)
+  - Total failure → atomic rollback
+  - Circuit breaker opens (fail fast)
+  - Breaker recovery (half-open → closed)
+  - Timeout bound (bounded latency)
+  - Invariant validation (paid requires provider_ref)
+  - Stock conflict rollback
+  - Comprehensive resilience scenarios
+  - No retry on non-transient errors (4xx)
+  - Circuit breaker short-circuit (fast-fail)
+  - Breaker time window semantics
+  - Bounded latency when OPEN
+  - Isolation across orders (global protection)
+  - Logging/observability verification
 
 ### Test Output
-- Verbose execution details
-- Clear "BUSINESS LOGIC" vs "DATABASE INTEGRATION" categorization
+- Verbose execution details for all test categories
+- Clear "BUSINESS LOGIC" vs "DATABASE INTEGRATION" vs "ORDER ROBUSTNESS" categorization
 - Summary statistics with pass/fail counts and success rate
+- Feature 3 implementation validation
