@@ -65,7 +65,7 @@ Implement a comprehensive resilience pattern including:
 The system needs to integrate with multiple partners providing product data in various formats (CSV, JSON) with evolving schemas. Hard-coding format handling would make the system brittle and difficult to maintain.
 
 ### Decision  
-Implement the **Adapter Pattern** with a Factory to handle different feed formats. This provides:  
+Implement the Adapter Pattern with a Factory to handle different feed formats. This provides:  
 - Clear interface segregation (`FeedAdapter` ABC)  
 - Easy extension for new formats  
 - Centralized format detection and routing  
@@ -155,7 +155,7 @@ Implement a multi-layered approach:
 The system handles sensitive customer data, payment information, and partner integrations. Security breaches could lead to data loss, financial damage, and loss of customer trust.
 
 ### Decision  
-Implement **defense-in-depth** security measures:  
+Implement defense-in-depth security measures:  
 - CSRF protection on all state-changing operations  
 - Role-Based Access Control (RBAC) for admin functions  
 - API key authentication for partner integrations  
@@ -185,9 +185,9 @@ Implement **defense-in-depth** security measures:
 During system stress or failures, unclear error messages frustrate users and increase support load. Technical error messages don't help end users resolve issues.
 
 ### Decision  
-Implement **user-centered error handling** that:  
-- Provides clear, actionable error messages with emoji indicators  
-- Maintains user context during failures (no data loss)  
+Implement user-centered error handling that:  
+- Provides clear, actionable error messages  
+- Maintains user context during failures  
 - Offers specific guidance for resolution  
 - Uses appropriate HTTP status codes and `Retry-After` headers  
 
@@ -215,7 +215,7 @@ Implement **user-centered error handling** that:
 Testing complex systems with external dependencies is challenging. Flaky tests, external service dependencies, and unpredictable test environments reduce development velocity and confidence.
 
 ### Decision  
-Implement a **test strategy** emphasizing:  
+Implement a test strategy emphasizing:  
 - Strategic mocking of external dependencies  
 - Deterministic test environments with controlled state  
 - Dependency injection for testability  
@@ -240,11 +240,17 @@ Implement a **test strategy** emphasizing:
 
 ## Summary of Advantages  
 
-- **Reflects Real Architecture:** Decisions naturally affect multiple quality attributes  
-- **Reduces Duplication:** Common patterns appear across scenarios  
-- **Better Traceability:** Clear mapping from decisions to implemented scenarios  
-- **Easier Maintenance:** Fewer documents to maintain  
-- **Strategic Focus:** Highlights the most important architectural decisions  
+- Reflects real architecture where decisions affect multiple quality attributes  
+- Reduces duplication and promotes consistency across scenarios  
+- Improves traceability between design decisions and quality attributes  
+- Simplifies maintenance and future architectural evolution  
+- Focuses documentation on key architectural concerns  
+
+---
+
+# Quality Scenarios and Architectural Decision Record (ADR) Mapping
+
+This table maps each quality scenario from the Quality Attribute Catalog to the corresponding architectural tactic and ADR that addresses it.
 
 # Quality Scenarios and Architectural Decision Record (ADR) Mapping
 
@@ -252,35 +258,38 @@ This table maps each quality scenario from the Quality Attribute Catalog to the 
 
 | **Quality Attribute** | **Scenario ID** | **Tactic / Pattern Implemented** | **Corresponding ADR** |
 |------------------------|----------------|----------------------------------|------------------------|
-| **Availability** | A1 | Transactional Inventory Management (Row-Level Locking) | [ADR 1 – Transactional Inventory Management](./adr_001_transactional_inventory.md) |
-| **Availability** | A2 | Resilient Payment Service Integration (Circuit Breaker + Retry + Timeout) | [ADR 2 – Resilient Payment Service Integration](./adr_002_payment_resilience.md) |
-| **Security** | S1 | CSRF Protection on Flash Checkout | [ADR 6 – Security-First Request Processing](./adr_006_security_first_processing.md) |
-| **Security** | S2 | RBAC Authorization | [ADR 6 – Security-First Request Processing](./adr_006_security_first_processing.md) |
-| **Modifiability** | M1 | Partner Feed Adapter Pattern | [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md) |
-| **Modifiability** | M2 | Business Rules Separation Pattern | [ADR 4 – Business Rules Separation Pattern](./adr_004_business_rules_separation.md) |
-| **Performance** | P1 | Per-User + SKU Throttling | [ADR 5 – Granular Throttling + Async Split](./adr_005_granular_throttling.md) |
-| **Performance** | P2 | Async Queue Split | [ADR 5 – Granular Throttling + Async Split](./adr_005_granular_throttling.md) |
-| **Integrability** | I1 | Validate → Transform → Upsert Pipeline | [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md) |
-| **Integrability** | I2 | Bulk Upsert Operations | [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md) |
-| **Testability** | T1 | Dependency Injection & Mocking | [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](./adr_008_test_strategy.md) |
-| **Testability** | T2 | Deterministic Test Environment | [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](./adr_008_test_strategy.md) |
-| **Usability** | U1 | Specific Error Messages | [ADR 7 – User-Centered Error Handling & Communication](./adr_007_user_centered_error_handling.md) |
-| **Usability** | U2 | Payment Unavailable UX | [ADR 7 – User-Centered Error Handling & Communication](./adr_007_user_centered_error_handling.md) |
+| **Availability** | A1 | Transactional Inventory Management (Row-Level Locking) | [ADR 1 – Transactional Inventory Management with Row-Level Locking](#adr-1-transactional-inventory-management-with-row-level-locking) |
+| **Availability** | A2 | Resilient Payment Service Integration (Circuit Breaker + Retry + Timeout) | [ADR 2 – Resilient Payment Service Integration Pattern](#adr-2-resilient-payment-service-integration-pattern) |
+| **Security** | S1 | CSRF Protection on Flash Checkout | [ADR 6 – Security-First Request Processing](#adr-6-security-first-request-processing) |
+| **Security** | S2 | RBAC Authorization | [ADR 6 – Security-First Request Processing](#adr-6-security-first-request-processing) |
+| **Modifiability** | M1 | Partner Feed Adapter Pattern | [ADR 3 – Adapter Pattern for Partner Feed Integration](#adr-3-adapter-pattern-for-partner-feed-integration) |
+| **Modifiability** | M2 | Business Rules Separation Pattern | [ADR 4 – Business Rules Separation Pattern](#adr-4-business-rules-separation-pattern) |
+| **Performance** | P1 | Per-User + SKU Throttling | [ADR 5 – Granular Throttling with Async Processing Split](#adr-5-granular-throttling-with-async-processing-split) |
+| **Performance** | P2 | Async Queue Split | [ADR 5 – Granular Throttling with Async Processing Split](#adr-5-granular-throttling-with-async-processing-split) |
+| **Integrability** | I1 | Validate → Transform → Upsert Pipeline | [ADR 3 – Adapter Pattern for Partner Feed Integration](#adr-3-adapter-pattern-for-partner-feed-integration) |
+| **Integrability** | I2 | Bulk Upsert Operations | [ADR 3 – Adapter Pattern for Partner Feed Integration](#adr-3-adapter-pattern-for-partner-feed-integration) |
+| **Testability** | T1 | Dependency Injection & Mocking | [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](#adr-8-comprehensive-test-strategy-with-dependency-isolation) |
+| **Testability** | T2 | Deterministic Test Environment | [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](#adr-8-comprehensive-test-strategy-with-dependency-isolation) |
+| **Usability** | U1 | Specific Error Messages | [ADR 7 – User-Centered Error Handling and Communication](#adr-7-user-centered-error-handling-and-communication) |
+| **Usability** | U2 | Payment Unavailable UX | [ADR 7 – User-Centered Error Handling and Communication](#adr-7-user-centered-error-handling-and-communication) |
 
 ---
+
+## ADR Index  
 
 ## ADR Index
 
-1. [ADR 1 – Transactional Inventory Management (Row-Level Locking)](./adr_001_transactional_inventory.md)  
-2. [ADR 2 – Resilient Payment Service Integration (Circuit Breaker + Retry + Timeout)](./adr_002_payment_resilience.md)  
-3. [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md)  
-4. [ADR 4 – Business Rules Separation Pattern](./adr_004_business_rules_separation.md)  
-5. [ADR 5 – Granular Throttling + Async Split](./adr_005_granular_throttling.md)  
-6. [ADR 6 – Security-First Request Processing](./adr_006_security_first_processing.md)  
-7. [ADR 7 – User-Centered Error Handling & Communication](./adr_007_user_centered_error_handling.md)  
-8. [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](./adr_008_test_strategy.md)
+1. [ADR 1 – Transactional Inventory Management with Row-Level Locking](#adr-1-transactional-inventory-management-with-row-level-locking)  
+2. [ADR 2 – Resilient Payment Service Integration Pattern](#adr-2-resilient-payment-service-integration-pattern)  
+3. [ADR 3 – Adapter Pattern for Partner Feed Integration](#adr-3-adapter-pattern-for-partner-feed-integration)  
+4. [ADR 4 – Business Rules Separation Pattern](#adr-4-business-rules-separation-pattern)  
+5. [ADR 5 – Granular Throttling with Async Processing Split](#adr-5-granular-throttling-with-async-processing-split)  
+6. [ADR 6 – Security-First Request Processing](#adr-6-security-first-request-processing)  
+7. [ADR 7 – User-Centered Error Handling and Communication](#adr-7-user-centered-error-handling-and-communication)  
+8. [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](#adr-8-comprehensive-test-strategy-with-dependency-isolation)
+
 
 ---
 
-> **Note:**  
-> Each ADR file provides rationale, alternatives, and implementation details for the corresponding architectural tactic addressing its associated quality attribute(s).
+> **Note:**
+> Each ADR file documents the rationale, alternatives, and implementation details for the corresponding architectural tactic addressing its associated quality attribute(s).
