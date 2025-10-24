@@ -1,0 +1,31 @@
+flowchart LR
+  %% Title
+  %% Deployment: Client + DB
+
+  subgraph Internet
+    C[User / Browser]
+  end
+
+  subgraph App_Tier
+    APP[Django App<br/>runserver :8000]
+    WRK[Background Worker<br/>run_queue.py]
+  end
+
+  subgraph Data_Tier
+    DB[(SQLite Database<br/>db.sqlite3)]
+  end
+
+  %% Flows
+  C -- HTTP :8000 --> APP
+  APP -- File I/O --> DB
+  APP -. enqueue jobs .-> WRK
+  WRK -- File I/O --> DB
+
+  %% Notes
+  classDef note fill:#f6f8fa,stroke:#d0d7de,color:#24292f;
+  N1[Development server configuration]:::note
+  N2[File-based database; no network ports]:::note
+  N3[Custom worker processes background jobs]:::note
+
+  %% Legend
+  %% Solid lines = request/response; dotted = async job enqueue
