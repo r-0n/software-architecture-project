@@ -252,9 +252,7 @@ Implement a test strategy emphasizing:
 
 This table maps each quality scenario from the Quality Attribute Catalog to the corresponding architectural tactic and ADR that addresses it.
 
-# Quality Scenarios and Architectural Decision Record (ADR) Mapping
 
-This table maps each quality scenario from the Quality Attribute Catalog to the corresponding architectural tactic and ADR that addresses it.
 
 | **Quality Attribute** | **Scenario ID** | **Tactic / Pattern Implemented** | **Corresponding ADR** |
 |------------------------|----------------|----------------------------------|------------------------|
@@ -276,8 +274,6 @@ This table maps each quality scenario from the Quality Attribute Catalog to the 
 ---
 
 ## ADR Index  
-
-## ADR Index
 
 1. [ADR 1 – Transactional Inventory Management with Row-Level Locking](#adr-1-transactional-inventory-management-with-row-level-locking)  
 2. [ADR 2 – Resilient Payment Service Integration Pattern](#adr-2-resilient-payment-service-integration-pattern)  
