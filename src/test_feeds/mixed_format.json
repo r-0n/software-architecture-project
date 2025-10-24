@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Premium Wireless Earbuds",
+    "sku": "EARBUDS-PRO",
+    "price": 129.99,
+    "stock_quantity": 25,
+    "category": "Electronics",
+    "description": "High-end wireless earbuds with active noise cancellation",
+    "flash_sale_price": 99.99,
+    "flash_sale_start": "2024-01-20 00:00:00",
+    "flash_sale_end": "2024-01-27 23:59:59",
+    "features": ["Noise Cancellation", "Wireless Charging", "24hr Battery"]
+  },
+  {
+    "name": "Smart Home Hub",
+    "sku": "HUB-SMART",
+    "price": 89.99,
+    "stock_quantity": 40,
+    "category": "Home Automation",
+    "description": "Central hub for smart home devices",
+    "warranty": "2 years",
+    "compatibility": ["Alexa", "Google Home", "Apple HomeKit"]
+  }
+]

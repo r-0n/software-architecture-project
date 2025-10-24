@@ -1,0 +1,11 @@
+name,sku,price,stock_quantity,category,description
+Product 001,PROD-001,10.99,50,Electronics,Test product 001
+Product 002,PROD-002,15.99,30,Home & Kitchen,Test product 002
+Product 003,PROD-003,20.99,25,Books,Test product 003
+Product 004,PROD-004,25.99,40,Electronics,Test product 004
+Product 005,PROD-005,30.99,15,Clothing,Test product 005
+Product 006,PROD-006,35.99,20,Electronics,Test product 006
+Product 007,PROD-007,40.99,35,Home & Kitchen,Test product 007
+Product 008,PROD-008,45.99,10,Books,Test product 008
+Product 009,PROD-009,50.99,60,Electronics,Test product 009
+Product 010,PROD-010,55.99,45,Clothing,Test product 010
