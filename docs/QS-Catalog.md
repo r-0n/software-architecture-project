@@ -4,8 +4,6 @@ Each scenario will follow the 6-part format as noted in the Checkpoint2 Document
 (Source, Stimulus, Environment, Artifact, Response, Response Measure)
 
 ---
-
-
 ## 1. Availability
 
 ### Scenario A1 — Flash Sale Concurrency Control

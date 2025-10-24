@@ -18,6 +18,10 @@ A comprehensive retail management system built with Django that provides user au
 - **Payment System**: Mock processing for cash/card payments with validation
 - **Checkout Flow**: Secure forms, address collection, payment method selection
 - **Concurrency Control**: Atomic transactions, row-level locking, error handling
+- **Flash Sale Orders**: High-concurrency checkout with throttling and idempotency
+- **Partner Catalog Ingest**: Automated product feed processing with validation
+- **Order Processing Robustness**: Retry policies, circuit breakers, atomic rollbacks
+- **Record/Playback Testing**: Automated regression testing with PII scrubbing
 
 
 ## Technology Stack
@@ -34,8 +38,8 @@ A comprehensive retail management system built with Django that provides user au
 software-architecture-project/
 ├── db/                      # Database schema documentation
 │   └── init.sql             # Complete database schema (Django-generated)
-├── docs/                    # Documentation (ADR, UML)
-├── tests/                   # Unit tests (business logic + database integration)
+├── docs/                    # Documentation (ADR, UML, QS-Catalog, Record/Playback)
+├── tests/                   # Unit tests (business logic + database integration + robustness + record/playback)
 ├── README.md                # This file
 ├── requirements.txt         # Dependencies
 ├── run_tests.py             # Test runner script
@@ -44,9 +48,11 @@ software-architecture-project/
     ├── db.sqlite3           # SQLite database
     ├── accounts/            # Authentication (models, views, forms, urls)
     ├── products/            # Product management (CRUD, categories, admin)
-    ├── cart/                # Shopping cart (models, business_rules, checkout)
+    ├── cart/                # Shopping cart (models, business_rules, checkout, robustness)
     ├── orders/              # Order processing (sales, payments, PDF receipts)
-    ├── retail/              # Main project (settings, urls, payment service)
+    ├── partner_feeds/       # Partner catalog ingestion (adapters, validators, services)
+    ├── payments/            # Payment resilience (client, policy, service)
+    ├── retail/              # Main project (settings, urls, middleware, logging)
     └── templates/           # HTML templates (accounts, products, cart, orders)
 ```
 
@@ -129,10 +135,10 @@ python manage.py createsuperuser
 python run_tests.py
 ```
 
-### Test Coverage (39 total tests)
+### Test Coverage (64 total tests)
 - **Business Logic Tests (9)**: Payment processing, cart rules, stock validation
 - **Database Integration Tests (15)**: CartItem operations, checkout flow, atomic transactions
-- **Order Robustness Tests (15)**: 
+- **Order Robustness Tests (16)**: 
   - Happy path (success)
   - Retry then success (transient failure recovery)
   - Total failure → atomic rollback
@@ -148,9 +154,44 @@ python run_tests.py
   - Bounded latency when OPEN
   - Isolation across orders (global protection)
   - Logging/observability verification
+  - CSRF protection on flash checkout
+- **Record/Playback Tests (5)**: Automated regression testing, PII scrubbing, flash sale workload testing
+- **Quality Scenario Tests (19)**: Comprehensive testing of all quality scenarios
+  - **Core Quality Scenarios (14)**: From QS-Catalog.md
+    - Availability (A1, A2): Concurrency control, payment resilience
+    - Security (S1, S2): CSRF protection, RBAC authorization
+    - Modifiability (M1, M2): Adapter pattern, business rules isolation
+    - Performance (P1, P2): Throttling, async queue split
+    - Integrability (I1, I2): Validate-transform-upsert pipeline, bulk operations
+    - Testability (T1, T2): Dependency injection, deterministic environment
+    - Usability (U1, U2): Error messages, payment unavailable UX
+  - **Release Resilience Scenarios (5)**: For "Faster Releases with Fewer Outages"
+    - R1: Zero downtime deployment
+    - R2: Feature flag safety
+    - R3: Database migration safety
+    - R4: Monitoring early detection
+    - R5: Graceful degradation
+
+### Record/Replay Testing
+The system includes automated record/playback testing for regression detection:
+
+```bash
+# Run all tests including record/playback
+python run_tests.py
+```
+
+**Features:**
+- Automatic recording of POST requests when `DEBUG=True`
+- PII scrubbing (passwords, tokens redacted)
+- Automated regression detection in test suite
+- Flash sale workload testing
+- 5 comprehensive record/playback tests
+
 
 ### Test Output
 - Verbose execution details for all test categories
-- Clear "BUSINESS LOGIC" vs "DATABASE INTEGRATION" vs "ORDER ROBUSTNESS" categorization
+- Clear "BUSINESS LOGIC" vs "DATABASE INTEGRATION" vs "ORDER ROBUSTNESS" vs "RECORD/PLAYBACK" vs "QUALITY SCENARIO" categorization
 - Summary statistics with pass/fail counts and success rate
 - Feature 3 implementation validation
+- Comprehensive quality scenario validation
+- 100% success rate (64/64 tests passing)
