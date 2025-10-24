@@ -3,7 +3,6 @@
 ---
 
 ## ADR 1: Transactional Inventory Management with Row-Level Locking  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -30,7 +29,6 @@ Implement atomic transactions with PostgreSQL row-level locking (`select_for_upd
 ---
 
 ## ADR 2: Resilient Payment Service Integration Pattern  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -61,7 +59,6 @@ Implement a comprehensive resilience pattern including:
 ---
 
 ## ADR 3: Adapter Pattern for Partner Feed Integration  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -92,7 +89,6 @@ Implement the **Adapter Pattern** with a Factory to handle different feed format
 ---
 
 ## ADR 4: Business Rules Separation Pattern  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -123,7 +119,6 @@ Extract all business rules into a dedicated `business_rules.py` module that:
 ---
 
 ## ADR 5: Granular Throttling with Async Processing Split  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -154,7 +149,6 @@ Implement a multi-layered approach:
 ---
 
 ## ADR 6: Security-First Request Processing  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -185,7 +179,6 @@ Implement **defense-in-depth** security measures:
 ---
 
 ## ADR 7: User-Centered Error Handling and Communication  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -216,7 +209,6 @@ Implement **user-centered error handling** that:
 ---
 
 ## ADR 8: Comprehensive Test Strategy with Dependency Isolation  
-**Date:** 2024-01-15  
 **Status:** Accepted  
 
 ### Context  
@@ -253,3 +245,42 @@ Implement a **test strategy** emphasizing:
 - **Better Traceability:** Clear mapping from decisions to implemented scenarios  
 - **Easier Maintenance:** Fewer documents to maintain  
 - **Strategic Focus:** Highlights the most important architectural decisions  
+
+# Quality Scenarios and Architectural Decision Record (ADR) Mapping
+
+This table maps each quality scenario from the Quality Attribute Catalog to the corresponding architectural tactic and ADR that addresses it.
+
+| **Quality Attribute** | **Scenario ID** | **Tactic / Pattern Implemented** | **Corresponding ADR** |
+|------------------------|----------------|----------------------------------|------------------------|
+| **Availability** | A1 | Transactional Inventory Management (Row-Level Locking) | [ADR 1 – Transactional Inventory Management](./adr_001_transactional_inventory.md) |
+| **Availability** | A2 | Resilient Payment Service Integration (Circuit Breaker + Retry + Timeout) | [ADR 2 – Resilient Payment Service Integration](./adr_002_payment_resilience.md) |
+| **Security** | S1 | CSRF Protection on Flash Checkout | [ADR 6 – Security-First Request Processing](./adr_006_security_first_processing.md) |
+| **Security** | S2 | RBAC Authorization | [ADR 6 – Security-First Request Processing](./adr_006_security_first_processing.md) |
+| **Modifiability** | M1 | Partner Feed Adapter Pattern | [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md) |
+| **Modifiability** | M2 | Business Rules Separation Pattern | [ADR 4 – Business Rules Separation Pattern](./adr_004_business_rules_separation.md) |
+| **Performance** | P1 | Per-User + SKU Throttling | [ADR 5 – Granular Throttling + Async Split](./adr_005_granular_throttling.md) |
+| **Performance** | P2 | Async Queue Split | [ADR 5 – Granular Throttling + Async Split](./adr_005_granular_throttling.md) |
+| **Integrability** | I1 | Validate → Transform → Upsert Pipeline | [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md) |
+| **Integrability** | I2 | Bulk Upsert Operations | [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md) |
+| **Testability** | T1 | Dependency Injection & Mocking | [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](./adr_008_test_strategy.md) |
+| **Testability** | T2 | Deterministic Test Environment | [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](./adr_008_test_strategy.md) |
+| **Usability** | U1 | Specific Error Messages | [ADR 7 – User-Centered Error Handling & Communication](./adr_007_user_centered_error_handling.md) |
+| **Usability** | U2 | Payment Unavailable UX | [ADR 7 – User-Centered Error Handling & Communication](./adr_007_user_centered_error_handling.md) |
+
+---
+
+## ADR Index
+
+1. [ADR 1 – Transactional Inventory Management (Row-Level Locking)](./adr_001_transactional_inventory.md)  
+2. [ADR 2 – Resilient Payment Service Integration (Circuit Breaker + Retry + Timeout)](./adr_002_payment_resilience.md)  
+3. [ADR 3 – Adapter Pattern for Partner Feed Integration](./adr_003_adapter_pattern.md)  
+4. [ADR 4 – Business Rules Separation Pattern](./adr_004_business_rules_separation.md)  
+5. [ADR 5 – Granular Throttling + Async Split](./adr_005_granular_throttling.md)  
+6. [ADR 6 – Security-First Request Processing](./adr_006_security_first_processing.md)  
+7. [ADR 7 – User-Centered Error Handling & Communication](./adr_007_user_centered_error_handling.md)  
+8. [ADR 8 – Comprehensive Test Strategy with Dependency Isolation](./adr_008_test_strategy.md)
+
+---
+
+> **Note:**  
+> Each ADR file provides rationale, alternatives, and implementation details for the corresponding architectural tactic addressing its associated quality attribute(s).
