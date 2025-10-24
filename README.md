@@ -21,7 +21,7 @@ A comprehensive retail management system built with Django that provides user au
 - **Flash Sale Orders**: High-concurrency checkout with throttling and idempotency
 - **Partner Catalog Ingest**: Automated product feed processing with validation
 - **Order Processing Robustness**: Retry policies, circuit breakers, atomic rollbacks
-- **Deterministic Testing**: Automated regression testing through interface testing
+- **Record/Playback Testing**: Automated regression testing through interface testing
 
 
 ## Technology Stack
