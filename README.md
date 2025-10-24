@@ -134,6 +134,13 @@ python manage.py createsuperuser
 ```bash
 python run_tests.py
 ```
+### Test Partner Ingest with sample Data
+
+```bash
+cd software-architecture-project/src
+python test_partner_ingestion.py
+```
+
 
 ### Test Coverage (64 total tests)
 - **Business Logic Tests (9)**: Payment processing, cart rules, stock validation
@@ -195,3 +202,5 @@ python run_tests.py
 - Feature 3 implementation validation
 - Comprehensive quality scenario validation
 - 100% success rate (64/64 tests passing)
+
+
