@@ -357,8 +357,13 @@ class QualityScenarioTestSuite(TestCase):
             allowed, message, retry_after = allow_checkout(self.user1.id, self.flash_product.id)
         
         # Should be throttled after rapid requests
+<<<<<<< Updated upstream
         self.assertFalse(allowed, "Should be throttled after rapid requests")
         self.assertIn('try again', message.lower(), "Should include retry timing")
+=======
+        self.assertFalse(result['allowed'], "Should be throttled after rapid requests")
+        self.assertIn('try again', result['message'].lower(), "Should include retry timing")
+>>>>>>> Stashed changes
         
         # Test response time is bounded
         start_time = time.time()
