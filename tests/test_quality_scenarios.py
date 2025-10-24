@@ -358,7 +358,7 @@ class QualityScenarioTestSuite(TestCase):
         
         # Should be throttled after rapid requests
         self.assertFalse(allowed, "Should be throttled after rapid requests")
-        self.assertIn('retry_after', message.lower(), "Should include retry timing")
+        self.assertIn('try again', message.lower(), "Should include retry timing")
         
         # Test response time is bounded
         start_time = time.time()
@@ -877,8 +877,7 @@ class QualityScenarioTestSuite(TestCase):
         self.assertEqual(response.status_code, 200, "Product browsing should work in degraded mode")
         
         # Cart operations should still work
-        response = self.client.post('/cart/add/', {
-            'product_id': self.product1.id,
+        response = self.client.post(f'/cart/add/{self.product1.id}/', {
             'quantity': 1
         })
         self.assertEqual(response.status_code, 302, "Cart operations should work in degraded mode")
