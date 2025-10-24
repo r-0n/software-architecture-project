@@ -35,8 +35,14 @@ def run_tests():
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=2)
     
-    # Run business logic, database integration, and order robustness tests
-    failures = test_runner.run_tests(['tests.test_business_logic', 'tests.test_database_integration', 'tests.test_order_processing_robustness'])
+    # Run all test modules
+    failures = test_runner.run_tests([
+        'tests.test_business_logic', 
+        'tests.test_database_integration', 
+        'tests.test_order_processing_robustness',
+        'tests.test_record_playback',
+        'tests.test_quality_scenarios'
+    ])
     
     # Count tests manually by importing and inspecting the test modules
     import unittest
