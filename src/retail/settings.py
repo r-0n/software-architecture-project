@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'retail.middleware.RequestRecordingMiddleware',  # Request recording for replay testing
 ]
 
 ROOT_URLCONF = 'retail.urls'
@@ -161,3 +162,6 @@ CIRCUIT_BREAKER = {
         "cool_off_s": 60    # Cool-off period in seconds
     }
 }
+
+# Request Recording Configuration
+REQUEST_RECORD_DIR = 'recorded_requests'  # Directory to store recorded requests

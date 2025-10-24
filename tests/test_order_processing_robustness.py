@@ -687,7 +687,7 @@ class OrderProcessingRobustnessTest(TransactionTestCase):
             content_type='application/json'
         )
         
-        # Should get 403 Forbidden due to missing CSRF token, or 400 if CSRF is handled differently
+        # Should get 403 Forbidden or 400 Bad Request due to missing CSRF token
         self.assertIn(response.status_code, [400, 403], f"Expected 400 or 403, got {response.status_code}")
         
         # Verify no sale was created
