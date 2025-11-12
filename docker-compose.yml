@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: retail_db
+    environment:
+      POSTGRES_DB: retail_db
+      POSTGRES_USER: retail_user
+      POSTGRES_PASSWORD: retail_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retail_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: retail_web
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./src:/app
+      - ./media:/app/media
+      - ./static:/app/static
+      - ./recorded_requests:/app/recorded_requests
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-i8ykr-%y7d&g8+7@i$6@zthq$%gtt%krt3y(y+dkc7lzo91a=2
+      - DATABASE_URL=postgresql://retail_user:retail_password@db:5432/retail_db
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    build: .
+    container_name: retail_worker
+    command: python manage.py run_queue
+    volumes:
+      - ./src:/app
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-i8ykr-%y7d&g8+7@i$6@zthq$%gtt%krt3y(y+dkc7lzo91a=2
+      - DATABASE_URL=postgresql://retail_user:retail_password@db:5432/retail_db
+    depends_on:
+      - db
+      - web
+
+volumes:
+  postgres_data:
+

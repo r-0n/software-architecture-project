@@ -1,0 +1,204 @@
+{% extends "accounts/base.html" %}
+{% block title %}System Metrics Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-graph-up me-2"></i>System Metrics Dashboard
+                        </h2>
+                        <p class="mb-0 text-muted">Observability and performance metrics for the last {{ days }} days</p>
+                    </div>
+                    <div>
+                        <a href="?days=7" class="btn btn-sm btn-outline-secondary">7 days</a>
+                        <a href="?days=30" class="btn btn-sm btn-outline-secondary">30 days</a>
+                        <a href="{% url 'metrics:quality_scenarios' %}" class="btn btn-sm btn-outline-info">Quality Scenarios</a>
+                        <a href="{% url 'metrics:api' %}?days={{ days }}" class="btn btn-sm btn-outline-primary">JSON API</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mt-3">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">{{ metrics.orders_today }}</h3>
+                <p class="mb-0">Orders Today</p>
+                <small class="text-muted">Avg: {{ metrics.orders_per_day_avg|floatformat:1 }}/day</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="{% if metrics.error_rate < 1 %}text-success{% elif metrics.error_rate < 5 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ metrics.error_rate|floatformat:2 }}%
+                </h3>
+                <p class="mb-0">Error Rate</p>
+                <small class="text-muted">Last {{ days }} days</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="{% if metrics.payment_success_rate >= 95 %}text-success{% elif metrics.payment_success_rate >= 90 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ metrics.payment_success_rate|floatformat:1 }}%
+                </h3>
+                <p class="mb-0">Payment Success Rate</p>
+                <small class="text-muted">Target: ≥95%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-info">{{ metrics.avg_response_time_ms|floatformat:0 }}ms</h3>
+                <p class="mb-0">Avg Response Time</p>
+                <small class="text-muted">Last {{ days }} days</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Health Indicators -->
+<div class="row mt-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">System Health</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <td><strong>Circuit Breaker State:</strong></td>
+                        <td>
+                            <span class="badge {% if metrics.circuit_breaker_state == 'CLOSED' %}bg-success{% elif metrics.circuit_breaker_state == 'OPEN' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ metrics.circuit_breaker_state }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stock Conflicts:</strong></td>
+                        <td>
+                            <span class="badge {% if metrics.stock_conflicts == 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ metrics.stock_conflicts }} (Target: 0)
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Throttled Requests:</strong></td>
+                        <td>{{ metrics.throttled_requests }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Refunds Today:</strong></td>
+                        <td>{{ metrics.refunds_today }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Payment Status Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status in payment_statuses %}
+                        <tr>
+                            <td>{{ status.status }}</td>
+                            <td>{{ status.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Orders Chart -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Daily Orders Trend</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Orders</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in daily_orders %}
+                        <tr>
+                            <td>{{ day.day }}</td>
+                            <td>{{ day.count }}</td>
+                            <td>${{ day.total_revenue|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Errors -->
+{% if error_metrics %}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Error Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Path</th>
+                                <th>Method</th>
+                                <th>Status Code</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for metric in error_metrics %}
+                            <tr>
+                                <td>{{ metric.recorded_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ metric.metadata.path|default:"N/A" }}</td>
+                                <td>{{ metric.metadata.method|default:"N/A" }}</td>
+                                <td>{{ metric.metadata.status_code|default:"N/A" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

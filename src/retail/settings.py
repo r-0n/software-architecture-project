@@ -52,10 +52,12 @@ INSTALLED_APPS = [
     "orders",
     'partner_feeds',
     'rest_framework',
+    'retail',  # Main app (for metrics models)
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'retail.middleware_observability.ObservabilityMiddleware',  # Structured logging with request IDs
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -90,12 +92,30 @@ WSGI_APPLICATION = 'retail.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Support both SQLite (development) and PostgreSQL (production/docker)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
+    # Parse PostgreSQL URL: postgresql://user:password@host:port/dbname
+    import urllib.parse
+    result = urllib.parse.urlparse(DATABASE_URL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': result.path[1:],  # Remove leading /
+            'USER': result.username,
+            'PASSWORD': result.password,
+            'HOST': result.hostname,
+            'PORT': result.port or '5432',
+        }
     }
-}
+else:
+    # Default to SQLite for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -165,3 +185,58 @@ CIRCUIT_BREAKER = {
 
 # Request Recording Configuration
 REQUEST_RECORD_DIR = 'recorded_requests'  # Directory to store recorded requests
+
+# Create logs directory if it doesn't exist
+import os
+logs_dir = BASE_DIR / 'logs'
+os.makedirs(logs_dir, exist_ok=True)
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'structured': {
+            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "request_id": "%(request_id)s", "extra": %(extra)s}',
+            'datefmt': '%Y-%m-%dT%H:%M:%S%z',
+        },
+        'verbose': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(name)s] [request_id=%(request_id)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'filters': {
+        'request_id': {
+            '()': 'retail.observability.RequestIDFilter',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'structured',
+            'filters': ['request_id'],
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': str(BASE_DIR / 'logs' / 'application.log'),
+            'formatter': 'structured',
+            'filters': ['request_id'],
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'retail': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

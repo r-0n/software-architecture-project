@@ -256,6 +256,14 @@ def checkout(request):
 
                             if product.stock_quantity < item["quantity"]:
                                 # Concurrency conflict: not enough stock at commit
+                                # Record stock conflict metric
+                                from retail.observability import record_metric
+                                record_metric('stock_conflicts', 1, {
+                                    'product_id': product.id,
+                                    'product_name': product.name,
+                                    'requested': item["quantity"],
+                                    'available': product.stock_quantity,
+                                })
                                 raise IntegrityError(f"Insufficient stock for {product.name}")
 
                             product.stock_quantity -= item["quantity"]
@@ -430,6 +438,13 @@ def flash_checkout(request):
             allowed, reason, retry_after = allow_checkout(user_id, item['product'].id)
             if not allowed:
                 log_checkout_throttled(user_id, reason, retry_after, item['product'].id)
+                # Record throttled request metric
+                from retail.observability import record_metric
+                record_metric('throttled_requests', 1, {
+                    'user_id': user_id,
+                    'product_id': item['product'].id,
+                    'reason': reason,
+                })
                 response = JsonResponse({
                     "status": "throttled", 
                     "message": reason
@@ -441,6 +456,12 @@ def flash_checkout(request):
         allowed, reason, retry_after = allow_checkout(user_id)
         if not allowed:
             log_checkout_throttled(user_id, reason, retry_after)
+            # Record throttled request metric
+            from retail.observability import record_metric
+            record_metric('throttled_requests', 1, {
+                'user_id': user_id,
+                'reason': reason,
+            })
             response = JsonResponse({
                 "status": "throttled", 
                 "message": reason
