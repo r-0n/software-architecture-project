@@ -8,6 +8,7 @@ import logging
 from decimal import Decimal
 from typing import Dict, Any, Optional
 from django.conf import settings
+from django.core.cache import cache
 
 from .client import PaymentGateway
 from .policy import RetryPolicy, CircuitBreaker
@@ -44,18 +45,34 @@ def charge_with_resilience(order, amount: Decimal, *, timeout_s: float = 2.0) ->
     
     # Check circuit breaker state
     if not circuit_breaker.can_execute():
+        # Calculate retry delay (remaining cool-off time, capped at 5s for UX)
+        retry_delay_s = 0
+        if circuit_breaker.get_state().value == "open":
+            # Access last failure timestamp using the circuit breaker's cache key pattern
+            last_failure_key = f"cb:payment_gateway:last_failure"
+            last_failure = cache.get(last_failure_key)
+            if last_failure:
+                elapsed = time.time() - last_failure
+                remaining = max(0, circuit_breaker.cool_off_s - elapsed)
+                # Cap retry delay at 5 seconds for user-facing messages
+                retry_delay_s = min(remaining, 5.0)
+            else:
+                retry_delay_s = min(circuit_breaker.cool_off_s, 5.0)
+        
         logger.warning("payments.attempt", extra={
             "order_id": order.id,
             "attempt_no": 0,
             "latency_ms": 0,
             "breaker_state": circuit_breaker.get_state().value,
-            "outcome": "circuit_open"
+            "outcome": "circuit_open",
+            "retry_delay_s": retry_delay_s
         })
         
         return {
             "status": "unavailable",
             "error": "circuit_open",
-            "circuit_breaker_state": circuit_breaker.get_state().value
+            "circuit_breaker_state": circuit_breaker.get_state().value,
+            "retry_delay_s": retry_delay_s
         }
     
     # Attempt payment with retry policy

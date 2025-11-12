@@ -22,10 +22,10 @@ import re
 import logging
 import json
 import uuid
+import time
 from .forms import CheckoutForm
 from orders.models import Sale, SaleItem, Payment
 from retail.payment import process_payment
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +216,7 @@ def checkout(request):
                     )
                     
                     # Step 2: Process payment with resilience patterns
+                    payment_start_time = time.time()
                     try:
                         payment_result = charge_with_resilience(sale, total, timeout_s=2.0)
                     except Exception as e:
@@ -280,13 +281,32 @@ def checkout(request):
                         # Circuit breaker is open - rollback to savepoint
                         transaction.savepoint_rollback(savepoint)
                         
+                        # Measure fallback response time (should be <1s)
+                        fallback_response_time = time.time() - payment_start_time
+                        retry_delay_s = payment_result.get("retry_delay_s", 5.0)
+                        retry_delay_int = int(retry_delay_s)
+                        
                         logger.warning("checkout.atomic.rollback", extra={
                             "order_id": sale.id,
                             "reason": "circuit_breaker_open",
-                            "circuit_state": payment_result.get("circuit_breaker_state", "unknown")
+                            "circuit_state": payment_result.get("circuit_breaker_state", "unknown"),
+                            "fallback_response_time_ms": int(fallback_response_time * 1000),
+                            "retry_delay_s": retry_delay_s
                         })
                         
-                        messages.error(request, "⚠️ Payment service is temporarily unavailable. Please try again in a few minutes.")
+                        # Ensure fallback is shown within 1 second
+                        if fallback_response_time > 1.0:
+                            logger.error("checkout.fallback_slow", extra={
+                                "order_id": sale.id,
+                                "fallback_time_ms": int(fallback_response_time * 1000),
+                                "threshold_ms": 1000
+                            })
+                        
+                        # Provide clear message with retry timing (retry delay ≤5s)
+                        if retry_delay_int > 0:
+                            messages.error(request, f"⚠️ Payment service is temporarily unavailable. Please try again in {retry_delay_int} second{'s' if retry_delay_int != 1 else ''}.")
+                        else:
+                            messages.error(request, "⚠️ Payment service is temporarily unavailable. Please try again shortly.")
                         return redirect("cart:checkout")
                         
                     else:

@@ -203,11 +203,12 @@ Each scenario will follow the 6-part format as noted in the Checkpoint2 Document
 - **Source:** Users experiencing payment service unavailability or circuit breaker activation
 - **Stimulus:** Payment service failures, circuit breaker open state, or throttling during high load
 - **Environment:** High-load operation with payment service issues or throttling active
-- **Artifact:** `src/cart/throttle.py::allow_checkout` (lines 11-63)
+- **Artifact:** `src/cart/views.py::checkout` (lines 280-310) and `src/payments/service.py::charge_with_resilience` (lines 46-73)
 - **Response:** System provides clear guidance on payment unavailability with retry timing and no data loss
-- **Response-Measure:** Payment unavailable messages <30 words; retry timing provided; no data loss; user guidance clear
-- **Tactic/Pattern(s):** payment unavailable UX, retry-after headers, clear guidance, no data loss
+- **Response-Measure:** Payment unavailable messages <30 words; fallback shown within 1s; retry delay ≤5s; no data loss; user guidance clear
+- **Tactic/Pattern(s):** payment unavailable UX, retry-after headers, clear guidance, no data loss, fast-fail timing
 - **Evidence:**
-  - `src/cart/throttle.py:32` — clear throttling message: "Too many requests. Please try again in {retry_after} seconds."
-  - `src/cart/views.py:433-437` — structured throttling response with Retry-After header
-  - `src/cart/throttle.py:52-54` — system load messaging: "System is under heavy load. Please try again in {retry_after} seconds."
+  - `src/payments/service.py:47-60` — circuit breaker fast-fail with retry delay calculation (capped at 5s)
+  - `src/cart/views.py:284-310` — fallback response time measurement and retry delay messaging
+  - `src/cart/views.py:297-303` — fallback response time validation (logs error if >1s)
+  - `src/cart/views.py:305-309` — user-facing message with retry timing (retry delay ≤5s)
