@@ -1,0 +1,118 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Return Requests - Retail Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-arrow-return-left me-2"></i>Return Requests
+                        </h2>
+                        <p class="mb-0 text-muted">{% if user_is_admin %}All return requests{% else %}Your return requests{% endif %}</p>
+                    </div>
+                    {% if not user_is_admin %}
+                        <a href="{% url 'orders:order_history' %}" class="btn btn-light">View Orders</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">RMA List ({{ rmas|length }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if rmas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>RMA ID</th>
+                                    <th>Sale #</th>
+                                    <th>Status</th>
+                                    <th>Reason</th>
+                                    <th>Date Opened</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rma in rmas %}
+                                <tr>
+                                    <td><strong>#{{ rma.id }}</strong></td>
+                                    <td>
+                                        <a href="{% url 'orders:order_detail' rma.sale.id %}" class="text-decoration-none">
+                                            Sale #{{ rma.sale.id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if rma.status == "requested" %}
+                                            <span class="badge bg-warning text-dark">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "under_review" %}
+                                            <span class="badge bg-info">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "validated" %}
+                                            <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "request_cancelled" %}
+                                            <span class="badge bg-danger">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "in_transit" %}
+                                            <span class="badge bg-primary">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "received" %}
+                                            <span class="badge bg-primary">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "under_inspection" %}
+                                            <span class="badge bg-warning text-dark">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "approved" %}
+                                            <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "repaired" %}
+                                            <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "replaced" %}
+                                            <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "refunded" %}
+                                            <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "declined" %}
+                                            <span class="badge bg-danger">{{ rma.get_status_display }}</span>
+                                        {% elif rma.status == "closed" %}
+                                            <span class="badge bg-secondary">{{ rma.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ rma.get_reason_display }}</td>
+                                    <td>{{ rma.opened_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        {% if rma.events.last %}
+                                            {{ rma.events.last.timestamp|date:"Y-m-d H:i" }}
+                                        {% else %}
+                                            {{ rma.opened_at|date:"Y-m-d H:i" }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'returns:rma_detail' rma.id %}" class="btn btn-sm btn-outline-info">
+                                            {% if user_is_admin %}Validate Request{% else %}View Details{% endif %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <h5>No return requests found</h5>
+                        <p class="text-muted">{% if user_is_admin %}There are no return requests in the system.{% else %}You haven't created any return requests yet.{% endif %}</p>
+                        {% if not user_is_admin %}
+                            <a href="{% url 'orders:order_history' %}" class="btn btn-outline-primary">View My Orders</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -38,3 +38,6 @@ src/accounts/migrations/__pycache__/
 src/products/migrations/__pycache__/
 src/cart/migrations/__pycache__/
 src/orders/migrations/__pycache__/
+
+# Test artifacts - auto-generated request recordings
+src/recorded_requests/

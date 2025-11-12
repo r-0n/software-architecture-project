@@ -16,13 +16,60 @@ from datetime import datetime
 @login_required
 def order_history(request):
     sales = Sale.objects.filter(user=request.user).order_by("-created_at")
-    return render(request, "orders/order_history.html", {"orders": sales})
+    # Check for existing RMAs for each sale (including closed ones - block new requests)
+    from returns.models import RMA
+    sales_with_rma_info = []
+    for sale in sales:
+        # Check for any RMA (active or closed) - if any exists, block new requests
+        existing_rma = RMA.objects.filter(sale=sale, customer=request.user).first()
+        
+        # Determine return request status
+        return_status = None
+        if existing_rma:
+            if existing_rma.status == 'declined':
+                return_status = 'declined'
+            elif existing_rma.status == 'closed':
+                return_status = 'closed'
+            elif existing_rma.status == 'request_cancelled':
+                return_status = 'cancelled'
+            elif existing_rma.status == 'repaired':
+                return_status = 'repaired'
+            elif existing_rma.status == 'replaced':
+                return_status = 'replaced'
+            elif existing_rma.status == 'refunded':
+                return_status = 'refunded'
+            elif existing_rma.status in ['validated', 'in_transit', 'received', 'under_inspection', 'approved']:
+                return_status = 'in_process'
+            else:  # requested, under_review
+                return_status = 'in_process'
+        
+        # Check if closed RMA was refunded (for Status column display)
+        was_refunded = False
+        if existing_rma and existing_rma.status == 'closed':
+            # Check if resolution was refund (customer chose refund, which transitions to refunded then closed)
+            was_refunded = existing_rma.resolution == 'refund'
+        
+        sales_with_rma_info.append({
+            'sale': sale,
+            'has_active_rma': existing_rma is not None,
+            'existing_rma_id': existing_rma.id if existing_rma else None,
+            'return_status': return_status,
+            'was_refunded': was_refunded
+        })
+    return render(request, "orders/order_history.html", {"orders_with_rma": sales_with_rma_info})
 
 
 @login_required
 def order_detail(request, order_id):
     sale = get_object_or_404(Sale, id=order_id, user=request.user)
-    return render(request, "orders/order_detail.html", {"order": sale})
+    # Check if ANY RMA already exists for this sale (including closed ones - block new requests)
+    from returns.models import RMA
+    existing_rma = RMA.objects.filter(sale=sale, customer=request.user).first()
+    return render(request, "orders/order_detail.html", {
+        "order": sale,
+        "has_active_rma": existing_rma is not None,
+        "existing_rma_id": existing_rma.id if existing_rma else None
+    })
 
 
 @login_required

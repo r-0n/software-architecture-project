@@ -17,6 +17,15 @@
                         <a href="{% url 'orders:download_receipt' order.id %}" class="btn btn-success me-2">
                             <i class="bi bi-download me-2"></i>Download Receipt
                         </a>
+                        {% if not has_active_rma %}
+                            <a href="{% url 'returns:create_rma' order.id %}" class="btn btn-outline-danger me-2">
+                                <i class="bi bi-arrow-return-left me-2"></i>Return Items
+                            </a>
+                        {% else %}
+                            <a href="{% url 'returns:rma_detail' existing_rma_id %}" class="btn btn-outline-info me-2">
+                                <i class="bi bi-arrow-return-left me-2"></i>View Return
+                            </a>
+                        {% endif %}
                         <a href="{% url 'orders:order_history' %}" class="btn btn-light">Back to Orders</a>
                     </div>
                 </div>

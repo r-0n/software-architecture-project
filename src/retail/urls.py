@@ -31,5 +31,5 @@ urlpatterns = [
     path('cart/', include('cart.urls')),
     path('', redirect_to_products),
     path("orders/", include("orders.urls")),
-
+    path("returns/", include("returns.urls")),
 ]

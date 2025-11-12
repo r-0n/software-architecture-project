@@ -21,7 +21,7 @@
 
 <div class="row mt-3">
     <div class="col-12">
-    {% if orders %}
+    {% if orders_with_rma %}
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -29,27 +29,64 @@
                     <th>Date</th>
                     <th>Total</th>
                     <th>Status</th>
+                    <th>Return Request Status</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                {% for order in orders %}
+                {% for order_info in orders_with_rma %}
+                {% with order=order_info.sale %}
                 <tr>
                     <td>#{{ order.id }}</td>
                     <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
                     <td>${{ order.total }}</td>
-                    <td>{{ order.status }}</td>
+                    <td>
+                        {% if order_info.return_status == 'refunded' or order_info.was_refunded %}
+                            refunded
+                        {% else %}
+                            {{ order.status }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order_info.return_status == 'in_process' %}
+                            <span class="badge bg-warning text-dark">In Process</span>
+                        {% elif order_info.return_status == 'repaired' %}
+                            <span class="badge bg-success">Repaired</span>
+                        {% elif order_info.return_status == 'replaced' %}
+                            <span class="badge bg-success">Replaced</span>
+                        {% elif order_info.return_status == 'refunded' %}
+                            <span class="badge bg-success">Refunded</span>
+                        {% elif order_info.return_status == 'closed' %}
+                            <span class="badge bg-secondary">Closed</span>
+                        {% elif order_info.return_status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% elif order_info.return_status == 'declined' %}
+                            <span class="badge bg-danger">Declined</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="btn-group" role="group">
-                            <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
-                                View Receipt
-                            </a>
                             <a href="{% url 'orders:download_receipt' order.id %}" class="btn btn-sm btn-outline-success">
                                 <i class="bi bi-download me-1"></i>Download
                             </a>
+                            <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                View Receipt
+                            </a>
+                            {% if not order_info.has_active_rma %}
+                                <a href="{% url 'returns:create_rma' order.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-arrow-return-left me-1"></i>Return Items
+                                </a>
+                            {% else %}
+                                <a href="{% url 'returns:rma_detail' order_info.existing_rma_id %}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-arrow-return-left me-1"></i>View Return
+                                </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
+                {% endwith %}
                 {% endfor %}
             </tbody>
         </table>

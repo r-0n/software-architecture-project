@@ -1,0 +1,700 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}RMA #{{ rma.id }} - Retail Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-arrow-return-left me-2"></i>RMA #{{ rma.id }}
+                        </h2>
+                        <p class="mb-0 text-muted">Return request for Sale #{{ rma.sale.id }}</p>
+                    </div>
+                    <div>
+                        {% if user_is_admin %}
+                            <a href="{% url 'returns:rma_list' %}" class="btn btn-light">Back to Returns</a>
+                        {% else %}
+                            <a href="{% url 'orders:order_detail' rma.sale.id %}" class="btn btn-outline-primary me-2">
+                                View Receipt
+                            </a>
+                            <a href="{% url 'orders:order_history' %}" class="btn btn-light">Back to Orders</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-8">
+        <!-- Status Timeline -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Status Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for event in rma.events.all %}
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-{% if event.to_status == 'requested' %}warning{% elif event.to_status == 'under_review' %}info{% elif event.to_status == 'validated' %}success{% elif event.to_status == 'request_cancelled' %}danger{% elif event.to_status == 'in_transit' %}primary{% elif event.to_status == 'received' %}primary{% elif event.to_status == 'under_inspection' %}warning{% elif event.to_status == 'approved' %}success{% elif event.to_status == 'repaired' %}success{% elif event.to_status == 'replaced' %}success{% elif event.to_status == 'refunded' %}success{% elif event.to_status == 'declined' %}danger{% else %}secondary{% endif %} text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-check"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">
+                                {% if event.to_status == "requested" %}Requested
+                                {% elif event.to_status == "under_review" %}Under Review
+                                {% elif event.to_status == "validated" %}Validated
+                                {% elif event.to_status == "request_cancelled" %}Request Cancelled
+                    {% elif event.to_status == "in_transit" %}In Transit
+                    {% elif event.to_status == "received" %}Received
+                    {% elif event.to_status == "under_inspection" %}Under Inspection
+                    {% elif event.to_status == "approved" %}Approved
+                    {% elif event.to_status == "repaired" %}Repaired
+                    {% elif event.to_status == "replaced" %}Replaced
+                    {% elif event.to_status == "refunded" %}Refunded
+                                {% elif event.to_status == "declined" %}Declined
+                                {% elif event.to_status == "closed" %}Closed
+                                {% else %}{{ event.to_status }}{% endif %}
+                                {% if event.from_status %}
+                                    <small class="text-muted">(from {% if event.from_status == "requested" %}Requested
+                                    {% elif event.from_status == "under_review" %}Under Review
+                                    {% elif event.from_status == "validated" %}Validated
+                                    {% elif event.from_status == "request_cancelled" %}Request Cancelled
+                                    {% elif event.from_status == "in_transit" %}In Transit
+                                    {% elif event.from_status == "received" %}Received
+                                    {% elif event.from_status == "under_inspection" %}Under Inspection
+                                    {% elif event.from_status == "approved" %}Approved
+                                    {% elif event.from_status == "repaired" %}Repaired
+                                    {% elif event.from_status == "replaced" %}Replaced
+                                    {% elif event.from_status == "refunded" %}Refunded
+                                    {% elif event.from_status == "declined" %}Declined
+                                    {% elif event.from_status == "closed" %}Closed
+                                    {% else %}{{ event.from_status }}{% endif %})</small>
+                                {% endif %}
+                            </h6>
+                            <p class="mb-1 text-muted small">
+                                {{ event.timestamp|date:"F d, Y H:i" }}
+                                {% if event.actor %}
+                                    by {{ event.actor.username }}
+                                {% endif %}
+                            </p>
+                            {% if event.notes %}
+                                <p class="mb-0 small">{{ event.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No events recorded yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- RMA Items -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Items Being Returned</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Requested Qty</th>
+                            <th>Approved Qty</th>
+                            <th>Unit Price</th>
+                            <th>Refund Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in rma.items.all %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.sale_item.product.name }}</strong><br>
+                                <small class="text-muted">SKU: {{ item.sale_item.product.sku }}</small>
+                            </td>
+                            <td>{{ item.requested_quantity }}</td>
+                            <td>
+                                {% if rma.status == "request_cancelled" %}
+                                    <span class="text-danger"><strong>Cancelled</strong></span>
+                                {% elif rma.status == "declined" %}
+                                    <span class="text-danger"><strong>Declined</strong></span>
+                                {% elif rma.status == "repaired" or rma.status == "replaced" %}
+                                    <span class="text-muted">0</span>
+                                {% elif rma.status == "closed" and rma.resolution == "repair" %}
+                                    <span class="text-muted">0</span>
+                                {% elif rma.status == "closed" and rma.resolution == "replacement" %}
+                                    <span class="text-muted">0</span>
+                                {% elif rma.status == "refunded" or rma.status == "closed" and rma.resolution == "refund" %}
+                                    {{ item.approved_quantity|default:item.requested_quantity }}
+                                {% elif item.approved_quantity %}
+                                    {{ item.approved_quantity }}
+                                {% else %}
+                                    <span class="text-muted">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rma.status == "request_cancelled" or rma.status == "declined" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% elif rma.status == "repaired" or rma.status == "replaced" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% elif rma.status == "closed" and rma.resolution == "repair" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% elif rma.status == "closed" and rma.resolution == "replacement" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% else %}
+                                    ${{ item.sale_item.unit_price }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rma.status == "request_cancelled" or rma.status == "declined" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% elif rma.status == "repaired" or rma.status == "replaced" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% elif rma.status == "closed" and rma.resolution == "repair" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% elif rma.status == "closed" and rma.resolution == "replacement" %}
+                                    <span class="text-muted">$0.00</span>
+                                {% else %}
+                                    ${{ item.get_refund_amount|floatformat:2 }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+        <!-- RMA Details -->
+        <div class="card mb-3 sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <h5 class="mb-0">RMA Details</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Status:</strong> 
+                    <span data-rma-status="{{ rma.status }}" style="display: none;"></span>
+                    {% if rma.status == "requested" %}
+                        <span class="badge bg-warning text-dark">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "under_review" %}
+                        <span class="badge bg-info">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "validated" %}
+                        <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "request_cancelled" %}
+                        <span class="badge bg-danger">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "in_transit" %}
+                        <span class="badge bg-primary">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "received" %}
+                        <span class="badge bg-primary">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "under_inspection" %}
+                        <span class="badge bg-warning text-dark">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "approved" %}
+                        <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "repaired" %}
+                        <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "replaced" %}
+                        <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "refunded" %}
+                        <span class="badge bg-success">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "declined" %}
+                        <span class="badge bg-danger">{{ rma.get_status_display }}</span>
+                    {% elif rma.status == "closed" %}
+                        <span class="badge bg-secondary">{{ rma.get_status_display }}</span>
+                    {% endif %}
+                </p>
+                <p><strong>Reason:</strong> {{ rma.get_reason_display }}</p>
+                <p><strong>Opened:</strong> {{ rma.opened_at|date:"F d, Y H:i" }}</p>
+                {% if rma.closed_at %}
+                    <p><strong>Closed:</strong> {{ rma.closed_at|date:"F d, Y H:i" }}</p>
+                {% endif %}
+                {% if rma.tracking_number %}
+                    <p><strong>Tracking Number:</strong> {{ rma.tracking_number }}</p>
+                {% endif %}
+                {% if rma.notes %}
+                    <p><strong>Notes:</strong><br>{{ rma.notes|linebreaks }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- User Actions (when status is validated) -->
+        {% if not user_is_admin and rma.status == "validated" %}
+        <div class="card">
+            <div class="card-header bg-success">
+                <h5 class="mb-0">Your Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button onclick="itemReturned({{ rma.id }})" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up me-2"></i>Item Returned
+                    </button>
+                    <button onclick="cancelRequest({{ rma.id }})" class="btn btn-outline-danger">
+                        <i class="bi bi-x-circle me-2"></i>Cancel Request
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- User Actions (when status is approved - choose resolution) -->
+        {% if not user_is_admin and rma.status == "approved" %}
+        <div class="card">
+            <div class="card-header bg-success">
+                <h5 class="mb-0">Choose Resolution</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Your return request has been approved. Please choose how you would like to proceed:</p>
+                <div class="d-grid gap-2">
+                    <button onclick="chooseResolution({{ rma.id }}, 'repair')" class="btn btn-outline-primary">
+                        <i class="bi bi-tools me-2"></i>Repair
+                    </button>
+                    <button onclick="chooseResolution({{ rma.id }}, 'replacement')" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-repeat me-2"></i>Replacement
+                    </button>
+                    <button onclick="chooseResolution({{ rma.id }}, 'refund')" class="btn btn-outline-primary">
+                        <i class="bi bi-currency-dollar me-2"></i>Refund
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Admin Actions -->
+        {% if user_is_admin %}
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">Admin Actions</h5>
+            </div>
+            <div class="card-body">
+                {% if rma.status == "closed" %}
+                    <div class="alert alert-secondary mb-0">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Case Closed:</strong> This RMA has been closed. No further actions can be taken on this return request.
+                    </div>
+                {% elif rma.status == "declined" %}
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-x-circle me-2"></i>
+                        <strong>Request Declined:</strong> This return request has been declined. No further actions can be taken on this return request.
+                    </div>
+                {% elif rma.status == "validated" %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Waiting for customer action:</strong> The customer needs to either return the item or cancel the request. Please wait for their action.
+                    </div>
+                {% elif rma.status == "approved" %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Waiting for customer action:</strong> The customer needs to choose their preferred resolution (Repair, Replacement, or Refund). Please wait for their choice.
+                    </div>
+                {% else %}
+                    <div class="d-grid gap-2">
+                        {% if rma.status == "under_review" %}
+                            <button onclick="approveRMA({{ rma.id }})" class="btn btn-info">
+                                <i class="bi bi-check-circle me-2"></i>Validate RMA
+                            </button>
+                        {% endif %}
+                        {% if rma.status == "in_transit" %}
+                            <button onclick="receiveRMA({{ rma.id }})" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-in-down me-2"></i>Mark as Received
+                            </button>
+                        {% endif %}
+                        {% if rma.status == "under_inspection" %}
+                            <button onclick="approveAfterInspection({{ rma.id }})" class="btn btn-success">
+                                <i class="bi bi-check-circle me-2"></i>Approve
+                            </button>
+                        {% endif %}
+                        {% if rma.status == "refunded" or rma.status == "repaired" or rma.status == "replaced" %}
+                            <button onclick="closeRMA({{ rma.id }})" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Close RMA
+                            </button>
+                        {% endif %}
+                        {% if rma.status != "closed" and rma.status != "declined" and rma.status != "request_cancelled" and rma.status != "validated" and rma.status != "approved" and rma.status != "refunded" and rma.status != "repaired" and rma.status != "replaced" %}
+                            <button onclick="closeRMA({{ rma.id }})" class="btn btn-outline-danger">
+                                <i class="bi bi-x-circle me-2"></i>Decline Request
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Show custom toast notification (matching app style)
+function showCustomToast(message, type = 'error') {
+    // Use existing toast container from base.html
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white border-0 ${type === 'error' ? 'bg-danger' : 'bg-success'}`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.setAttribute('data-bs-autohide', 'true');
+    toastElement.setAttribute('data-bs-delay', '5000');
+    
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to container and show
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Remove element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+// Custom confirmation toast (matching app style)
+function showCustomConfirmToast(message, onConfirm, onCancel) {
+    // Create backdrop overlay to block interaction
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop fade show';
+    backdrop.style.zIndex = '1040';
+    document.body.appendChild(backdrop);
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    
+    // Use existing toast container from base.html
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create confirmation toast element
+    const toastElement = document.createElement('div');
+    toastElement.className = 'toast align-items-center text-white border-0 bg-warning';
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.setAttribute('data-bs-autohide', 'false');
+    
+    const confirmId = 'confirm_' + Date.now();
+    const cancelId = 'cancel_' + Date.now();
+    
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong>⚠️ Confirmation Required</strong><br>
+                ${message}
+                <div class="mt-2">
+                    <button type="button" id="${confirmId}" class="btn btn-sm btn-light me-2">Yes</button>
+                    <button type="button" id="${cancelId}" class="btn btn-sm btn-outline-light">No</button>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Function to cleanup and restore page interaction
+    function cleanup() {
+        backdrop.remove();
+        document.body.style.overflow = '';
+    }
+    
+    // Add to container and show
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: false
+    });
+    toast.show();
+    
+    // Attach event listeners
+    document.getElementById(confirmId).addEventListener('click', function() {
+        toast.hide();
+        cleanup();
+        if (onConfirm) onConfirm();
+    });
+    
+    document.getElementById(cancelId).addEventListener('click', function() {
+        toast.hide();
+        cleanup();
+        if (onCancel) onCancel();
+    });
+    
+    // Handle close button
+    toastElement.querySelector('.btn-close').addEventListener('click', function() {
+        cleanup();
+        if (onCancel) onCancel();
+    });
+    
+    // Remove element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+        cleanup();
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function approveRMA(rmaId) {
+    showCustomConfirmToast('Are you sure you want to approve this RMA?', function() {
+        fetch(`/returns/${rmaId}/approve/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'RMA approved successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to approve RMA', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred while approving the RMA.', 'error');
+        });
+    });
+}
+
+function receiveRMA(rmaId) {
+    showCustomConfirmToast('Mark this RMA as received in warehouse?', function() {
+        fetch(`/returns/${rmaId}/receive/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'RMA marked as received', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to mark as received', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+
+function refundRMA(rmaId) {
+    showCustomConfirmToast('Process refund for this RMA? This will restock inventory.', function() {
+        fetch(`/returns/${rmaId}/refund/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'Refund processed successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to process refund', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+
+function closeRMA(rmaId) {
+    // Get the current RMA status from the page to determine the message
+    const statusElement = document.querySelector('[data-rma-status]');
+    const currentStatus = statusElement ? statusElement.getAttribute('data-rma-status') : '';
+    
+    let confirmMessage = 'Are you sure you want to close this RMA? This action cannot be undone and will prevent further return requests for this order.';
+    
+    // Different message for decline vs close
+    if (currentStatus && !['refunded', 'repaired', 'replaced'].includes(currentStatus)) {
+        confirmMessage = 'Are you sure you want to decline this return request? This action cannot be undone.';
+    }
+    
+    showCustomConfirmToast(confirmMessage, function() {
+        fetch(`/returns/${rmaId}/close/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (currentStatus && ['refunded', 'repaired', 'replaced'].includes(currentStatus)) {
+                    showCustomToast(data.message || 'RMA closed successfully', 'success');
+                } else {
+                    showCustomToast(data.message || 'Return request declined successfully', 'success');
+                }
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to close RMA', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+
+function cancelRequest(rmaId) {
+    showCustomConfirmToast('Are you sure you want to cancel this return request?', function() {
+        fetch(`/returns/${rmaId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'Return request cancelled successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to cancel request', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+
+function itemReturned(rmaId) {
+    showCustomConfirmToast('Have you returned the item? This will notify the warehouse to confirm receipt.', function() {
+        fetch(`/returns/${rmaId}/item-returned/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'Item marked as returned', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to mark item as returned', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+
+function approveAfterInspection(rmaId) {
+    showCustomConfirmToast('Approve this RMA after inspection? The customer will be able to choose their preferred resolution.', function() {
+        fetch(`/returns/${rmaId}/approve-inspection/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'RMA approved successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to approve RMA', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+
+function chooseResolution(rmaId, resolution) {
+    const resolutionNames = {
+        'repair': 'Repair',
+        'replacement': 'Replacement',
+        'refund': 'Refund'
+    };
+    
+    showCustomConfirmToast(`Choose ${resolutionNames[resolution]} as your resolution?`, function() {
+        const formData = new FormData();
+        formData.append('resolution', resolution);
+        
+        fetch(`/returns/${rmaId}/choose-resolution/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCustomToast(data.message || 'Resolution chosen successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showCustomToast(data.error || 'Failed to choose resolution', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCustomToast('An error occurred.', 'error');
+        });
+    });
+}
+</script>
+{% endblock %}
+

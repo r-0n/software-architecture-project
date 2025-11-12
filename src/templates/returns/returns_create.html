@@ -1,0 +1,215 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Create Return Request - Retail Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-arrow-return-left me-2"></i>Create Return Request
+                        </h2>
+                        <p class="mb-0 text-muted">Return items from Sale #{{ sale.id }}</p>
+                    </div>
+                    <a href="{% url 'orders:order_history' %}" class="btn btn-light">Back to Orders</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Order Items</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity Purchased</th>
+                                <th>Unit Price</th>
+                                <th>Return Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale_item in sale.items.all %}
+                            <tr>
+                                <td>
+                                    <strong>{{ sale_item.product.name }}</strong><br>
+                                    <small class="text-muted">SKU: {{ sale_item.product.sku }}</small>
+                                </td>
+                                <td>{{ sale_item.quantity }}</td>
+                                <td>${{ sale_item.unit_price }}</td>
+                                <td>
+                                    <input type="number" 
+                                           name="quantity_{{ sale_item.id }}" 
+                                           id="id_quantity_{{ sale_item.id }}"
+                                           class="form-control" 
+                                           min="0" 
+                                           max="{{ sale_item.quantity }}" 
+                                           value="0"
+                                           style="width: 100px;"
+                                           onchange="validateReturnQuantity(this, {{ sale_item.quantity }})"
+                                           oninput="validateReturnQuantity(this, {{ sale_item.quantity }})">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.reason.id_for_label }}" class="form-label">
+                                    <strong>Reason for Return</strong> <span class="text-danger">*</span>
+                                </label>
+                                {{ form.reason }}
+                                {% if form.reason.errors %}
+                                    <div class="text-danger small">{{ form.reason.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.photo.id_for_label }}" class="form-label">
+                                    <strong>Photo (Optional)</strong>
+                                </label>
+                                {{ form.photo }}
+                                {% if form.photo.help_text %}
+                                    <small class="form-text text-muted">{{ form.photo.help_text }}</small>
+                                {% endif %}
+                                {% if form.photo.errors %}
+                                    <div class="text-danger small">{{ form.photo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <strong>Additional Notes</strong>
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'orders:order_history' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Submit Return Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show custom toast notification (matching app style)
+function showCustomToast(message, type = 'error') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white border-0 ${type === 'error' ? 'bg-danger' : 'bg-success'}`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.setAttribute('data-bs-autohide', 'true');
+    toastElement.setAttribute('data-bs-delay', '5000');
+    
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to container and show
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Remove element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+// Validate return quantity against purchased quantity
+function validateReturnQuantity(input, maxQuantity) {
+    const value = parseInt(input.value) || 0;
+    
+    if (value > maxQuantity) {
+        input.classList.add('is-invalid');
+        input.value = maxQuantity; // Reset to max allowed
+        showCustomToast('You can only request return quantity up to how much you purchased.', 'error');
+        return false;
+    } else {
+        input.classList.remove('is-invalid');
+        return true;
+    }
+}
+
+// Validate that at least one item has quantity > 0
+document.querySelector('form').addEventListener('submit', function(e) {
+    const quantityInputs = document.querySelectorAll('input[type="number"][name^="quantity_"]');
+    let hasQuantity = false;
+    let hasError = false;
+    
+    quantityInputs.forEach(input => {
+        const value = parseInt(input.value) || 0;
+        const maxQuantity = parseInt(input.max);
+        
+        // Check if quantity exceeds max
+        if (value > maxQuantity) {
+            hasError = true;
+            validateReturnQuantity(input, maxQuantity);
+        }
+        
+        if (value > 0) {
+            hasQuantity = true;
+        }
+    });
+    
+    if (hasError) {
+        e.preventDefault();
+        showCustomToast('You can only request return quantity up to how much you purchased.', 'error');
+        return false;
+    }
+    
+    if (!hasQuantity) {
+        e.preventDefault();
+        showCustomToast('Please select at least one item to return.', 'error');
+        return false;
+    }
+});
+</script>
+{% endblock %}
+
