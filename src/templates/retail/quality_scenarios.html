@@ -1,0 +1,130 @@
+{% extends "accounts/base.html" %}
+{% block title %}Quality Scenarios Verification{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="background-color: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);" mb-4>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-info">
+                            <i class="bi bi-shield-check me-2"></i>Quality Scenarios Verification
+                        </h2>
+                        <p class="mb-0 text-muted">Runtime verification of quality scenarios from QS-Catalog.md</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'metrics:dashboard' %}" class="btn btn-outline-primary">Metrics Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scenario A1: Flash Sale Concurrency Control -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-{% if scenario_a1.status == 'PASS' %}success{% else %}danger{% endif %} text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-{% if scenario_a1.status == 'PASS' %}check-circle{% else %}x-circle{% endif %} me-2"></i>
+                    Scenario A1: Flash Sale Concurrency Control
+                    <span class="badge bg-light text-dark float-end">{{ scenario_a1.status }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Response Measure:</strong> {{ scenario_a1.response_measure }}</p>
+                <table class="table">
+                    <tr>
+                        <td><strong>Stock Conflicts:</strong></td>
+                        <td>
+                            <span class="badge {% if scenario_a1.details.stock_conflicts == 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ scenario_a1.details.stock_conflicts }} (Target: {{ scenario_a1.details.target }})
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Concurrent Checkouts:</strong></td>
+                        <td>{{ scenario_a1.details.concurrent_checkouts }}</td>
+                    </tr>
+                </table>
+                <div class="alert alert-info">
+                    <strong>Scenario Details:</strong><br>
+                    <small>
+                        Source: Multiple users attempting flash sale checkout simultaneously<br>
+                        Stimulus: High concurrent load during flash sale events<br>
+                        Response: System prevents overselling through atomic transactions and row-level locking<br>
+                        <strong>Verification:</strong> Stock conflicts = {{ scenario_a1.details.stock_conflicts }} (must be 0)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scenario A2: Payment Service Resilience -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-{% if scenario_a2.status == 'PASS' %}success{% else %}danger{% endif %} text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-{% if scenario_a2.status == 'PASS' %}check-circle{% else %}x-circle{% endif %} me-2"></i>
+                    Scenario A2: Payment Service Resilience
+                    <span class="badge bg-light text-dark float-end">{{ scenario_a2.status }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Response Measure:</strong> {{ scenario_a2.response_measure }}</p>
+                <table class="table">
+                    <tr>
+                        <td><strong>Payment Success Rate:</strong></td>
+                        <td>
+                            <span class="badge {% if scenario_a2.details.payment_success_rate >= scenario_a2.details.target %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ scenario_a2.details.payment_success_rate }}% (Target: ≥{{ scenario_a2.details.target }}%)
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Circuit Breaker State:</strong></td>
+                        <td>
+                            <span class="badge {% if scenario_a2.details.circuit_breaker_state == 'CLOSED' %}bg-success{% elif scenario_a2.details.circuit_breaker_state == 'OPEN' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ scenario_a2.details.circuit_breaker_state }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fast-Fail Latency:</strong></td>
+                        <td>
+                            <span class="badge {% if scenario_a2.details.fast_fail_latency_ms < scenario_a2.details.target_fast_fail %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ scenario_a2.details.fast_fail_latency_ms }}ms (Target: <{{ scenario_a2.details.target_fast_fail }}ms)
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+                <div class="alert alert-info">
+                    <strong>Scenario Details:</strong><br>
+                    <small>
+                        Source: External payment gateway failures and timeouts<br>
+                        Stimulus: Payment service 5xx errors, timeouts, circuit breaker activation<br>
+                        Response: System maintains availability through retry, circuit breaker, and graceful degradation<br>
+                        <strong>Verification:</strong> Success rate ≥95%, Fast-fail <100ms when circuit open
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="alert alert-secondary">
+            <small>
+                <strong>Verification Date:</strong> {{ verification_date|date:"Y-m-d H:i:s" }}<br>
+                These metrics are calculated from runtime data and demonstrate that quality scenarios are satisfied in production.
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

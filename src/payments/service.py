@@ -13,6 +13,7 @@ from django.core.cache import cache
 from .client import PaymentGateway
 from .policy import RetryPolicy, CircuitBreaker
 from retail.logging import log_payment_attempt, log_breaker_transition
+from retail.observability import record_metric
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,13 @@ def charge_with_resilience(order, amount: Decimal, *, timeout_s: float = 2.0) ->
         cool_off_s=cb_config.get('cool_off_s', 60)
     )
     
-    # Check circuit breaker state
+    # Check circuit breaker state and record metric
+    cb_state = circuit_breaker.get_state().value
+    record_metric('circuit_breaker_state', 1 if cb_state == 'OPEN' else 0, {
+        'state': cb_state,
+        'order_id': order.id,
+    })
+    
     if not circuit_breaker.can_execute():
         # Calculate retry delay (remaining cool-off time, capped at 5s for UX)
         retry_delay_s = 0
@@ -63,7 +70,7 @@ def charge_with_resilience(order, amount: Decimal, *, timeout_s: float = 2.0) ->
             "order_id": order.id,
             "attempt_no": 0,
             "latency_ms": 0,
-            "breaker_state": circuit_breaker.get_state().value,
+            "breaker_state": cb_state,
             "outcome": "circuit_open",
             "retry_delay_s": retry_delay_s
         })
@@ -71,7 +78,7 @@ def charge_with_resilience(order, amount: Decimal, *, timeout_s: float = 2.0) ->
         return {
             "status": "unavailable",
             "error": "circuit_open",
-            "circuit_breaker_state": circuit_breaker.get_state().value,
+            "circuit_breaker_state": cb_state,
             "retry_delay_s": retry_delay_s
         }
     
@@ -90,12 +97,17 @@ def charge_with_resilience(order, amount: Decimal, *, timeout_s: float = 2.0) ->
             
             # Record success
             circuit_breaker.on_success()
+            cb_state_after = circuit_breaker.get_state().value
+            record_metric('circuit_breaker_state', 1 if cb_state_after == 'OPEN' else 0, {
+                'state': cb_state_after,
+                'order_id': order.id,
+            })
             
             logger.info("payments.attempt", extra={
                 "order_id": order.id,
                 "attempt_no": attempt,
                 "latency_ms": latency_ms,
-                "breaker_state": circuit_breaker.get_state().value,
+                "breaker_state": cb_state_after,
                 "outcome": "success"
             })
             
@@ -113,12 +125,17 @@ def charge_with_resilience(order, amount: Decimal, *, timeout_s: float = 2.0) ->
             
             # Record failure
             circuit_breaker.on_failure()
+            cb_state_after = circuit_breaker.get_state().value
+            record_metric('circuit_breaker_state', 1 if cb_state_after == 'OPEN' else 0, {
+                'state': cb_state_after,
+                'order_id': order.id,
+            })
             
             logger.warning("payments.attempt", extra={
                 "order_id": order.id,
                 "attempt_no": attempt,
                 "latency_ms": latency_ms,
-                "breaker_state": circuit_breaker.get_state().value,
+                "breaker_state": cb_state_after,
                 "outcome": "failure",
                 "error": str(e)
             })

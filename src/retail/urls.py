@@ -32,4 +32,5 @@ urlpatterns = [
     path('', redirect_to_products),
     path("orders/", include("orders.urls")),
     path("returns/", include("returns.urls")),
+    path("metrics/", include('retail.urls_metrics')),
 ]
