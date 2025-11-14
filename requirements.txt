@@ -14,3 +14,4 @@ psycopg2-binary>=2.9.9
 
 # Development Tools
 django-extensions
+PyYAML>=6.0
