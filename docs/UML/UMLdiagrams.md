@@ -37,7 +37,7 @@
 ![Client + DB UML](<CP3_client+DB_diagram.png>)
 
 - ## Implementation: Package/module diagram. 
-![Package/Module diagram](<CP3_classDiagram.png>)
+![Package/Module diagram](<CP3 package diagram.png>)
 
 - ## Process: System Sequence Diagrams
 
