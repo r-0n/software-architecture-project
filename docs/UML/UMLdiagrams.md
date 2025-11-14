@@ -16,6 +16,7 @@
 - ## Use-Case: Register Sale, and all other use cases you implemented.
 ![Usecase diagram](image-2.png)
 
+
 # CP2 Updated Diagrams
 - ## Logical: Class diagram.
 ![class diagram](<CP2 Class Diagram.png>)
@@ -36,7 +37,7 @@
 ![Client + DB UML](<CP3_client+DB_diagram.png>)
 
 - ## Implementation: Package/module diagram. 
-![Package/Module diagram](<package diagram.png>)
+![Package/Module diagram](<CP3_classDiagram.png>)
 
 - ## Process: System Sequence Diagrams
 
