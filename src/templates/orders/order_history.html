@@ -21,6 +21,45 @@
 
 <div class="row mt-3">
     <div class="col-12">
+        <!-- Search and Filter Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        {{ search_form.search }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ search_form.status }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ search_form.start_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ search_form.end_date }}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center">
+                        <div class="form-check">
+                            {{ search_form.only_no_returns }}
+                            <label class="form-check-label" for="{{ search_form.only_no_returns.id_for_label }}">
+                                {{ search_form.only_no_returns.label }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-start">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            Filter
+                        </button>
+                    </div>
+                    {% if request.GET.search or request.GET.status or request.GET.start_date or request.GET.end_date or request.GET.only_no_returns %}
+                        <div class="col-md-1 d-flex align-items-start">
+                            <a href="{% url 'orders:order_history' %}" class="btn btn-outline-secondary w-100">
+                                Clear
+                            </a>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
     {% if orders_with_rma %}
         <table class="table table-striped">
             <thead>
@@ -95,4 +134,23 @@
     {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const statusSelect = document.getElementById("id_status");
+    const noReturnsCheckbox = document.getElementById("id_only_no_returns");
+    
+    if (!statusSelect || !noReturnsCheckbox) {
+        return;
+    }
+    
+    function syncStatusDisabled() {
+        statusSelect.disabled = noReturnsCheckbox.checked;
+    }
+    
+    noReturnsCheckbox.addEventListener("change", syncStatusDisabled);
+    // Initialize on page load (handles pre-checked state)
+    syncStatusDisabled();
+});
+</script>
 {% endblock %}

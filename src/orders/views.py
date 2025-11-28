@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.db.models import Q
 from .models import Sale, SaleItem, Payment
+from .forms import OrderHistoryFilterForm
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -16,6 +18,43 @@ from datetime import datetime
 @login_required
 def order_history(request):
     sales = Sale.objects.filter(user=request.user).order_by("-created_at")
+    search_form = OrderHistoryFilterForm(request.GET or None)
+    status_filter = None
+    only_no_returns = False
+    
+    # Apply filters if form is valid
+    if search_form.is_valid():
+        search = search_form.cleaned_data.get('search')
+        status_filter = search_form.cleaned_data.get("status") or None
+        start_date = search_form.cleaned_data.get('start_date')
+        end_date = search_form.cleaned_data.get('end_date')
+        only_no_returns = search_form.cleaned_data.get("only_no_returns") or False
+        
+        # When only_no_returns is True, ignore status_filter
+        if only_no_returns:
+            status_filter = None
+        
+        # Apply date range filter
+        if start_date:
+            sales = sales.filter(created_at__date__gte=start_date)
+        if end_date:
+            sales = sales.filter(created_at__date__lte=end_date)
+        
+        # Apply keyword search
+        if search:
+            search_q = Q()
+            # Check if search is a numeric order ID
+            try:
+                order_id = int(search)
+                search_q |= Q(id=order_id)
+            except ValueError:
+                pass
+            
+            # Search by product name in order items
+            search_q |= Q(items__product__name__icontains=search)
+            
+            sales = sales.filter(search_q).distinct()
+    
     # Check for existing RMAs for each sale (including closed ones - block new requests)
     from returns.models import RMA
     sales_with_rma_info = []
@@ -49,14 +88,98 @@ def order_history(request):
             # Check if resolution was refund (customer chose refund, which transitions to refunded then closed)
             was_refunded = existing_rma.resolution == 'refund'
         
+        # Compute overall_status based on RMA status and resolution
+        overall_status = None
+        if existing_rma:
+            rma_status = existing_rma.status
+            rma_resolution = getattr(existing_rma, "resolution", None)
+            
+            # Refunded
+            if rma_status == "refunded" or (rma_status == "closed" and rma_resolution == "refund"):
+                overall_status = "refunded"
+            
+            # Pending
+            elif rma_status in ["requested", "under_review", "validated", "in_transit"]:
+                overall_status = "pending"
+            
+            # Returned
+            elif rma_status in ["received", "under_inspection", "approved"]:
+                overall_status = "returned"
+            
+            # Completed (non-refund terminal outcomes)
+            elif rma_status in ["request_cancelled", "repaired", "replaced", "declined", "closed"]:
+                overall_status = "completed"
+            
+            else:
+                # Fallback for any unexpected status: treat as completed
+                overall_status = "completed"
+        
+        else:
+            # No RMA: use Sale.status as before
+            raw_status = (sale.status or "").lower()
+            if raw_status in ["pending", "processing", "requested", "under_review"]:
+                overall_status = "pending"
+            else:
+                overall_status = "completed"
+        
         sales_with_rma_info.append({
             'sale': sale,
             'has_active_rma': existing_rma is not None,
             'existing_rma_id': existing_rma.id if existing_rma else None,
             'return_status': return_status,
-            'was_refunded': was_refunded
+            'was_refunded': was_refunded,
+            'overall_status': overall_status
         })
-    return render(request, "orders/order_history.html", {"orders_with_rma": sales_with_rma_info})
+    
+    # Apply status filter based on overall_status,
+    # with special handling for "completed"
+    if status_filter:
+        if status_filter == "completed":
+            filtered = []
+            for info in sales_with_rma_info:
+                sale = info["sale"]
+                overall = info.get("overall_status")
+                return_status = info.get("return_status")
+                has_rma = info.get("has_active_rma")
+                
+                # We only care about completed overall status
+                if overall != "completed":
+                    continue
+                
+                # Sale status must be "paid" (case-insensitive)
+                sale_status = (getattr(sale, "status", "") or "").lower()
+                is_paid = sale_status == "paid"
+                
+                # We want orders that HAD some return history, not the clean ones:
+                # - Either there is a return_status,
+                # - Or we know there is an associated RMA.
+                has_return_history = (return_status is not None) or bool(has_rma)
+                
+                if is_paid and has_return_history:
+                    filtered.append(info)
+            
+            sales_with_rma_info = filtered
+        else:
+            # For other statuses, keep the existing overall_status behavior
+            sales_with_rma_info = [
+                info
+                for info in sales_with_rma_info
+                if info.get("overall_status") == status_filter
+            ]
+    
+    # Apply "no return requests" filter
+    if only_no_returns:
+        sales_with_rma_info = [
+            info
+            for info in sales_with_rma_info
+            # No return_status and no RMA associated for this order
+            if info.get("return_status") is None and not info.get("has_active_rma")
+        ]
+    
+    return render(request, "orders/order_history.html", {
+        "orders_with_rma": sales_with_rma_info,
+        "search_form": search_form,
+    })
 
 
 @login_required
