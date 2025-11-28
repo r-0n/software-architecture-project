@@ -7,7 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from orders.models import Sale, SaleItem
 from products.models import Product
-from .models import RMA, RMAItem, RMAEvent
+from .models import RMA, RMAItem, RMAEvent, RMANotification
 from .forms import CreateRMAForm, RMAUpdateForm
 from accounts.decorators import admin_required
 
@@ -123,11 +123,15 @@ def rma_detail(request, rma_id):
     
     refund_total = rma.compute_refund_total()
     
+    # Get notifications for this RMA
+    rma_notifications = RMANotification.objects.filter(rma=rma, user=request.user).order_by('-created_at')
+    
     is_admin = (hasattr(request.user, 'profile') and request.user.profile.is_admin) or request.user.is_superuser
     return render(request, 'returns/returns_detail.html', {
         'rma': rma,
         'refund_total': refund_total,
-        'user_is_admin': is_admin
+        'user_is_admin': is_admin,
+        'rma_notifications': rma_notifications
     })
 
 
@@ -383,4 +387,46 @@ def rma_choose_resolution(request, rma_id):
     else:
         messages.success(request, f"{resolution.capitalize()} chosen. We will process your request.")
     return redirect('returns:rma_detail', rma_id=rma_id)
+
+
+@login_required
+def notification_list(request):
+    """Get list of notifications for the current user"""
+    notifications = RMANotification.objects.filter(user=request.user).order_by('-created_at')[:10]
+    
+    return JsonResponse({
+        'notifications': [
+            {
+                'id': n.id,
+                'message': n.message,
+                'status': n.status,
+                'status_display': RMANotification.NOTIFICATION_STATUSES.get(n.status, n.status),
+                'rma_id': n.rma.id,
+                'is_read': n.is_read,
+                'created_at': n.created_at.isoformat(),
+            }
+            for n in notifications
+        ],
+        'unread_count': RMANotification.objects.filter(user=request.user, is_read=False).count()
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_mark_read(request, notification_id):
+    """Mark a notification as read"""
+    notification = get_object_or_404(RMANotification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_mark_all_read(request):
+    """Mark all notifications as read for the current user"""
+    RMANotification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    
+    return JsonResponse({'success': True})
 

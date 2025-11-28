@@ -15,5 +15,9 @@ urlpatterns = [
     path("<int:rma_id>/cancel/", views.rma_cancel_request, name="rma_cancel_request"),
     path("<int:rma_id>/item-returned/", views.rma_item_returned, name="rma_item_returned"),
     path("<int:rma_id>/choose-resolution/", views.rma_choose_resolution, name="rma_choose_resolution"),
+    # Notification endpoints
+    path("notifications/", views.notification_list, name="notification_list"),
+    path("notifications/<int:notification_id>/read/", views.notification_mark_read, name="notification_mark_read"),
+    path("notifications/mark-all-read/", views.notification_mark_all_read, name="notification_mark_all_read"),
 ]
 

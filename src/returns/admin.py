@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RMA, RMAItem, RMAEvent
+from .models import RMA, RMAItem, RMAEvent, RMANotification
 
 
 @admin.register(RMA)
@@ -34,4 +34,13 @@ class RMAEventAdmin(admin.ModelAdmin):
     list_filter = ['to_status', 'timestamp']
     search_fields = ['rma__id', 'actor__username', 'notes']
     readonly_fields = ['timestamp']
+
+
+@admin.register(RMANotification)
+class RMANotificationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'rma', 'status', 'is_read', 'created_at']
+    list_filter = ['status', 'is_read', 'created_at']
+    search_fields = ['user__username', 'rma__id', 'message']
+    readonly_fields = ['created_at']
+    list_editable = ['is_read']
 

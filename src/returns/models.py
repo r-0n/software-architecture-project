@@ -112,6 +112,9 @@ class RMA(models.Model):
             actor=actor or self.customer,
             notes=notes
         )
+        
+        # Create notification for status changes
+        RMANotification.create_for_status_change(self, new_status)
 
 
 class RMAItem(models.Model):
@@ -150,3 +153,48 @@ class RMAEvent(models.Model):
     def __str__(self):
         return f"RMA #{self.rma.id}: {self.from_status} → {self.to_status} by {self.actor.username if self.actor else 'System'}"
 
+
+class RMANotification(models.Model):
+    """Notifications for RMA status changes"""
+    
+    # Statuses that trigger notifications
+    NOTIFICATION_STATUSES = {
+        'under_review': 'Submitted',
+        'received': 'Received',
+        'under_inspection': 'Inspected',
+        'approved': 'Approved',
+        'refunded': 'Refunded',
+    }
+    
+    rma = models.ForeignKey(RMA, on_delete=models.CASCADE, related_name="notifications")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="rma_notifications")
+    status = models.CharField(max_length=20, help_text="RMA status that triggered this notification")
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Notification for {self.user.username}: RMA #{self.rma.id} - {self.status}"
+    
+    @classmethod
+    def create_for_status_change(cls, rma, new_status):
+        """Create notifications when RMA status changes to a notifiable status"""
+        if new_status not in cls.NOTIFICATION_STATUSES:
+            return
+        
+        status_display = cls.NOTIFICATION_STATUSES[new_status]
+        message = f"RMA #{rma.id} status updated to: {status_display}"
+        
+        # Create notification for the customer
+        cls.objects.create(
+            rma=rma,
+            user=rma.customer,
+            status=new_status,
+            message=message
+        )

@@ -176,8 +176,49 @@
     </div>
 
     <div class="col-md-4">
+        <!-- RMA Status Updates (Notifications) -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">RMA Status Updates</h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto; padding: 0.75rem;">
+                {% if rma_notifications %}
+                    {% for notification in rma_notifications %}
+                    <div class="mb-3 pb-3 {% if not notification.is_read %}border-start border-primary border-3 ps-3{% else %}{% if not forloop.last %}border-bottom pb-3{% endif %}{% endif %}" style="{% if not notification.is_read %}background-color: #e7f3ff; padding-left: 1rem !important;{% endif %}">
+                        <div class="d-flex align-items-center mb-2">
+                            {% if notification.status == "under_review" %}
+                                <span class="badge bg-info me-2">Submitted</span>
+                            {% elif notification.status == "received" %}
+                                <span class="badge bg-primary me-2">Received</span>
+                            {% elif notification.status == "under_inspection" %}
+                                <span class="badge bg-warning text-dark me-2">Inspected</span>
+                            {% elif notification.status == "approved" %}
+                                <span class="badge bg-success me-2">Approved</span>
+                            {% elif notification.status == "refunded" %}
+                                <span class="badge bg-success me-2">Refunded</span>
+                            {% else %}
+                                <span class="badge bg-secondary me-2">{{ notification.get_status_display }}</span>
+                            {% endif %}
+                            {% if not notification.is_read %}
+                                <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;">New</span>
+                            {% endif %}
+                        </div>
+                        <div class="small mb-1">{{ notification.message }}</div>
+                        <div class="text-muted notification-time" style="font-size: 0.75rem;" data-timestamp="{{ notification.created_at|date:'c' }}">
+                            {{ notification.created_at|date:"F d, Y H:i" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <small>No status updates yet</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- RMA Details -->
-        <div class="card mb-3 sticky-top" style="top: 20px;">
+        <div class="card mb-3">
             <div class="card-header">
                 <h5 class="mb-0">RMA Details</h5>
             </div>
@@ -695,6 +736,44 @@ function chooseResolution(rmaId, resolution) {
         });
     });
 }
+
+// Update notification timestamps to show "time ago"
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTimeAgo() {
+        const timeElements = document.querySelectorAll('.notification-time');
+        timeElements.forEach(function(el) {
+            const timestamp = el.getAttribute('data-timestamp');
+            if (timestamp) {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffSec = Math.floor(diffMs / 1000);
+                const diffMin = Math.floor(diffSec / 60);
+                const diffHour = Math.floor(diffMin / 60);
+                const diffDay = Math.floor(diffHour / 24);
+                
+                let timeAgo;
+                if (diffSec < 60) {
+                    timeAgo = 'just now';
+                } else if (diffMin < 60) {
+                    timeAgo = `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+                } else if (diffHour < 24) {
+                    timeAgo = `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+                } else if (diffDay < 7) {
+                    timeAgo = `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+                } else {
+                    timeAgo = date.toLocaleDateString();
+                }
+                
+                el.textContent = timeAgo;
+            }
+        });
+    }
+    
+    updateTimeAgo();
+    // Update every minute
+    setInterval(updateTimeAgo, 60000);
+});
 </script>
 {% endblock %}
 
