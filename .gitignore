@@ -41,3 +41,14 @@ src/orders/migrations/__pycache__/
 
 # Test artifacts - auto-generated request recordings
 src/recorded_requests/
+
+# Temporary test/development scripts
+src/create_test_users.py
+src/verify_setup.py
+
+# Test CSV files (keep test_feeds/ for reference, but ignore manual uploads)
+src/partner_feeds/*.csv
+src/partner_feeds/*.json
+
+# Logs directory
+src/logs/
