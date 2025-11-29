@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.conf import settings
 from orders.models import Sale, SaleItem
 from products.models import Product
@@ -114,7 +115,7 @@ class RMA(models.Model):
         )
         
         # Create notification for status changes
-        RMANotification.create_for_status_change(self, new_status)
+        RMANotification.create_for_status_change(self, new_status, actor=actor)
 
 
 class RMAItem(models.Model):
@@ -183,18 +184,42 @@ class RMANotification(models.Model):
         return f"Notification for {self.user.username}: RMA #{self.rma.id} - {self.status}"
     
     @classmethod
-    def create_for_status_change(cls, rma, new_status):
+    def create_for_status_change(cls, rma, new_status, actor=None):
         """Create notifications when RMA status changes to a notifiable status"""
         if new_status not in cls.NOTIFICATION_STATUSES:
             return
         
         status_display = cls.NOTIFICATION_STATUSES[new_status]
-        message = f"RMA #{rma.id} status updated to: {status_display}"
         
         # Create notification for the customer
+        customer_message = f"RMA #{rma.id} status updated to: {status_display}"
         cls.objects.create(
             rma=rma,
             user=rma.customer,
             status=new_status,
-            message=message
+            message=customer_message
         )
+        
+        # Create notifications for all admins
+        from django.contrib.auth.models import User
+        from accounts.models import UserProfile
+        
+        # Get all admin users (superusers + users with admin role)
+        # Use left join to handle users without profiles
+        admin_users = User.objects.filter(
+            Q(is_superuser=True) | 
+            Q(profile__role='admin')
+        ).distinct()
+        
+        # Create notification for each admin (excluding the actor if they're an admin)
+        admin_message = f"RMA #{rma.id} for Sale #{rma.sale.id} status updated to: {status_display}"
+        for admin_user in admin_users:
+            # Don't notify the admin who made the change (they already know)
+            if actor and admin_user.id == actor.id:
+                continue
+            cls.objects.create(
+                rma=rma,
+                user=admin_user,
+                status=new_status,
+                message=admin_message
+            )
