@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.http import JsonResponse
+from django.conf import settings
 from .models import Product, Category
 from .forms import ProductForm, ProductSearchForm, CategoryForm
 from .services import is_flash_sale_active, current_effective_price
@@ -17,6 +18,27 @@ def product_list(request):
     """Display list of products with search and filter functionality"""
     products = Product.objects.all()
     search_form = ProductSearchForm(request.GET)
+    
+    # Determine low-stock threshold (configurable)
+    try:
+        threshold = int(request.GET.get("low_stock_threshold", settings.LOW_STOCK_THRESHOLD_DEFAULT))
+        if threshold < 0:
+            threshold = settings.LOW_STOCK_THRESHOLD_DEFAULT
+    except (TypeError, ValueError):
+        threshold = settings.LOW_STOCK_THRESHOLD_DEFAULT
+    
+    # Whether to show only low-stock products
+    only_low_stock = request.GET.get("only_low_stock") == "on"
+    
+    # Check if user can manage products (same logic as user_is_admin context processor)
+    can_manage_products = False
+    if request.user.is_authenticated:
+        # Superusers automatically have admin access
+        if request.user.is_superuser:
+            can_manage_products = True
+        # Check if user has profile and is admin
+        elif hasattr(request.user, 'profile'):
+            can_manage_products = request.user.profile.is_admin
     
     # Apply search filter
     if search_form.is_valid():
@@ -57,6 +79,10 @@ def product_list(request):
         # If form is invalid, don't apply any filters (show all products)
         pass
     
+    # Additional low-stock filter for admin: only show products below dynamic threshold
+    if can_manage_products and only_low_stock:
+        products = products.filter(stock_quantity__gt=0, stock_quantity__lte=threshold)
+    
     # Pagination
     paginator = Paginator(products, 10)  # Show 10 products per page
     page_number = request.GET.get('page')
@@ -75,6 +101,8 @@ def product_list(request):
         'cart_items': cart_items,
         'cart_total_price': cart_total_price,
         'cart_total_items': cart_total_items,
+        'low_stock_threshold': threshold,
+        'only_low_stock': only_low_stock,
     }
     return render(request, 'products/product_list.html', context)
 

@@ -241,3 +241,6 @@ LOGGING = {
         },
     },
 }
+
+# Low-stock threshold configuration
+LOW_STOCK_THRESHOLD_DEFAULT = int(os.environ.get("LOW_STOCK_THRESHOLD_DEFAULT", 10))

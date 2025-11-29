@@ -44,8 +44,39 @@
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-outline-primary w-100">Search</button>
                     </div>
-                    {% if request.GET.search or request.GET.category or request.GET.stock_status %}
-                        <div class="col-md-2">
+                    
+                    {% if user_is_admin %}
+                        <div class="col-md-3 mt-3">
+                            <label for="id_low_stock_threshold" class="form-label">
+                                Low-stock threshold
+                            </label>
+                            <input
+                                type="number"
+                                name="low_stock_threshold"
+                                id="id_low_stock_threshold"
+                                class="form-control"
+                                min="0"
+                                value="{{ low_stock_threshold|default:10 }}"
+                            >
+                        </div>
+                        <div class="col-md-4 mt-4 d-flex align-items-center">
+                            <div class="form-check">
+                                <input
+                                    type="checkbox"
+                                    name="only_low_stock"
+                                    id="id_only_low_stock"
+                                    class="form-check-input"
+                                    {% if only_low_stock %}checked{% endif %}
+                                >
+                                <label class="form-check-label" for="id_only_low_stock">
+                                    Only show low-stock products (≤ threshold)
+                                </label>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if request.GET.search or request.GET.category or request.GET.stock_status or request.GET.low_stock_threshold or request.GET.only_low_stock %}
+                        <div class="col-md-2 mt-3">
                             <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary w-100">Clear</a>
                         </div>
                     {% endif %}
