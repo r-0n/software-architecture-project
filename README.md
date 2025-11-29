@@ -23,6 +23,69 @@ A comprehensive retail management system built with Django that provides user au
 - **Order Processing Robustness**: Retry policies, circuit breakers, atomic rollbacks
 - **Record/Playback Testing**: Automated regression testing through interface testing
 
+## New Features – Checkpoint 4
+
+### 2.1 Order History Filtering & Search (Customer Side)
+
+A comprehensive filtering and search system has been added to the Order History screen, allowing customers to efficiently find and filter their past orders.
+
+**Features:**
+- **Filter by Order Status**: Filter orders by status categories:
+  - **Completed**: Paid orders that had return history (excludes clean orders with no returns)
+  - **Pending**: Orders with RMA status in requested, under_review, validated, or in_transit
+  - **Returned**: Orders with RMA status in received, under_inspection, or approved
+  - **Refunded**: Orders with RMA status "refunded" or closed with resolution="refund"
+- **Keyword Search**: Search by order ID (numeric) or product names within order items
+- **Date Range Filter**: Filter orders by creation date using start date and end date inputs
+- **No Return Requests Filter**: Checkbox option to show only orders that never had any return request (orthogonal to status filter)
+
+**Implementation Details:**
+- New `OrderHistoryFilterForm` in `src/orders/forms.py` with fields: search, status, start_date, end_date, only_no_returns
+- Enhanced `order_history` view in `src/orders/views.py` with:
+  - Dynamic status filtering based on RMA status and resolution
+  - Keyword search across order ID and product names via related SaleItem relationships
+  - Date range filtering on `Sale.created_at`
+  - `overall_status` computation that maps RMA states to high-level status categories
+- Filter UI matches the existing product search form design for consistency
+- All filters work in combination and preserve state in URL parameters
+
+### 2.2 Configurable Low-Stock Alerts (Admin Side)
+
+Admin users now have access to configurable low-stock threshold controls in the product management interface.
+
+**Features:**
+- **Dynamic Threshold Input**: Admin users see a number input field to set a custom low-stock threshold per request
+- **Low-Stock Filter Checkbox**: "Only show low-stock products (≤ threshold)" checkbox to filter products where `0 < stock_quantity <= threshold`
+- **Default Threshold**: Configurable via `LOW_STOCK_THRESHOLD_DEFAULT` setting (default: 10, can be overridden via environment variable)
+- **Admin-Only UI**: Low-stock controls are only visible to users with admin role (via `UserProfile.role == 'admin'` or superuser status)
+
+**Implementation Details:**
+- New setting `LOW_STOCK_THRESHOLD_DEFAULT` in `src/retail/settings.py`
+- Enhanced `product_list` view in `src/products/views.py` with:
+  - Runtime threshold calculation from request parameters or default
+  - Admin-only filter application when checkbox is checked
+  - Uses custom `user_is_admin` logic (not Django's `is_staff`)
+- Admin controls added to `src/templates/products/product_list.html`:
+  - Threshold input field pre-filled with current threshold value
+  - Checkbox to toggle low-stock-only filtering
+  - Only visible when `user_is_admin` is True (same condition as "Add New Product" button)
+- Regular customers see no changes to the UI
+
+### 2.3 RMA Status Notifications
+
+RMA status changes are now surfaced to users through lightweight front-end notifications and badges.
+
+**Features:**
+- **Status Display**: RMA status progression displayed as badges:
+  - Submitted → Received → Under Inspection → Approved → Refunded
+- **UI Notifications**: Simple front-end notifications for status changes (no email/SMS)
+- **Integration**: Fully integrated with existing Returns & Refunds workflow
+- **User Experience**: Clear visual indicators for RMA status at each stage of the return process
+
+**Implementation Details:**
+- Status badges and notifications integrated into RMA detail and list views
+- Uses existing Bootstrap badge components for consistent styling
+- No backend notification service required — lightweight front-end implementation only
 
 ## Technology Stack
 
