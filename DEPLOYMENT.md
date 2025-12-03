@@ -47,7 +47,7 @@ docker compose exec web python manage.py create_admin
 ```
 
 Default credentials:
-- Username: `admin`
+- Username: `admin@example.com`
 - Password: `admin123`
 
 ### 4. Populate Sample Data
