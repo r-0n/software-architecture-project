@@ -41,6 +41,7 @@ src/orders/migrations/__pycache__/
 
 # Test artifacts - auto-generated request recordings
 src/recorded_requests/
+recorded_requests/
 
 # Temporary test/development scripts
 src/create_test_users.py
