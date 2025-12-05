@@ -178,10 +178,9 @@ When we update the form styling in one place, it automatically applies to all fo
 
 **Why This Decision Is Appropriate:**
 
-1. **Requirement Alignment**: Assignment specified "lightweight" notifications
-2. **Infrastructure Simplicity**: No new services, no new dependencies
-3. **Sufficient for Use Case**: Users check RMA status when they visit the page
-4. **Cost-Effective**: No external service costs (email/SMS providers)
+1. **Infrastructure Simplicity**: No new services, no new dependencies
+2. **Sufficient for Use Case**: Users check RMA status when they visit the page
+3. **Cost-Effective**: No external service costs (email/SMS providers)
 
 **The Trade-off:**
 Users must refresh the page to see status changes. This is acceptable because:
