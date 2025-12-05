@@ -25,7 +25,6 @@ import uuid
 import time
 from .forms import CheckoutForm
 from orders.models import Sale, SaleItem, Payment
-from retail.payment import process_payment
 
 logger = logging.getLogger(__name__)
 

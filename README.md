@@ -87,6 +87,37 @@ RMA status changes are now surfaced to users through lightweight front-end notif
 - Uses existing Bootstrap badge components for consistent styling
 - No backend notification service required — lightweight front-end implementation only
 
+## Observability & Monitoring (Checkpoint 3)
+
+The system includes comprehensive observability features to support debugging and production monitoring:
+
+### Structured Logging
+- **JSON Format**: All logs output in structured JSON with timestamp, level, logger, message, and request_id
+- **X-Request-ID Tracing**: UUID-based request IDs generated per HTTP request for correlating logs across the system
+- **ObservabilityMiddleware**: Automatically injects request IDs into log records and response headers
+- **Logging Configuration**: `src/retail/logging.py` with console and file handlers
+
+### Metrics Collection
+- **Metric Model**: Database-backed metrics storage (`src/retail/models.py`)
+- **Metric Types**: orders_per_day, error_rate, payment_success_rate, avg_response_time, circuit_breaker_state, stock_conflicts, throttled_requests
+- **Recording**: `record_metric()` function for capturing key system events
+- **Aggregation**: `get_metrics_summary(days=7)` for time-based analytics
+
+### Dashboards
+- **Metrics Dashboard** (`/metrics/dashboard/`): Admin-only view showing:
+  - Key metrics cards (orders, error rate, payment success, response time)
+  - System health indicators
+  - Daily trends and payment status breakdown
+- **Quality Scenarios Dashboard** (`/metrics/quality-scenarios/`): Runtime verification of quality attributes:
+  - A1: Flash Sale Concurrency Control (stock conflicts = 0)
+  - A2: Payment Service Resilience (≥95% success, <100ms fast-fail)
+
+### Debugging Support
+- **Request Tracing**: X-Request-ID headers enable end-to-end request tracking across logs
+- **Error Metrics**: Automatic recording of 4xx/5xx responses with metadata
+- **Circuit Breaker Monitoring**: Real-time circuit breaker state tracking for payment service health
+- **Structured Search**: JSON logs enable efficient searching by request_id, user_id, or error type
+
 ## Technology Stack
 
 - **Backend**: Django 5.2.6, Python 3.13.3
