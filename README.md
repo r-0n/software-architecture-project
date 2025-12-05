@@ -138,6 +138,7 @@ software-architecture-project/
 │   │   └── ...              # Other ADRs (persistence, observability, returns, etc.)
 │   ├── UML/                 # UML diagrams for all checkpoints (CP1-CP4)
 │   │   └── UMLdiagrams.md   # Complete 4+1 view diagrams for CP1-CP4
+│   ├── CP4_Design_Reflection.md  # CP4 design decisions reflection & analysis
 │   ├── QS-Catalog.md        # Quality Scenario Catalog
 │   ├── record_playback.md   # Record/Playback testing documentation
 │   └── RUNBOOK.md           # Operational runbook
