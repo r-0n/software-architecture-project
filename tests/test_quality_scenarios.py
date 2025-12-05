@@ -229,8 +229,8 @@ class QualityScenarioTestSuite(TestCase):
         # Test CSRF protection by making request without CSRF token
         # Enable flash sale with proper time constraints
         self.flash_product.flash_sale_enabled = True
-        self.flash_product.flash_sale_starts_at = datetime.now()
-        self.flash_product.flash_sale_ends_at = datetime.now() + timedelta(hours=1)
+        self.flash_product.flash_sale_starts_at = timezone.now()
+        self.flash_product.flash_sale_ends_at = timezone.now() + timedelta(hours=1)
         self.flash_product.save()
         
         response = self.client.post('/cart/flash-checkout/', 
@@ -630,8 +630,8 @@ class QualityScenarioTestSuite(TestCase):
         
         # Enable flash sale with proper time constraints
         self.flash_product.flash_sale_enabled = True
-        self.flash_product.flash_sale_starts_at = datetime.now()
-        self.flash_product.flash_sale_ends_at = datetime.now() + timedelta(hours=1)
+        self.flash_product.flash_sale_starts_at = timezone.now()
+        self.flash_product.flash_sale_ends_at = timezone.now() + timedelta(hours=1)
         self.flash_product.save()
         
         # Test throttling message clarity
