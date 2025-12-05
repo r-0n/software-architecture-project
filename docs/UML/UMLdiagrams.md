@@ -70,3 +70,25 @@
 
 ### View Metrics Dashboard Sequence Diagram
 ![View Metrics SSD](<ViewMetricsSSD_CP3.png>)
+
+
+# UML CP4 (4+1 Views) 
+
+- ## Logical: Class diagram.
+![Class Diagram](<CP4 ClassDiagram.png>)
+
+- ## Deployment: Full Deployment Architecture.. 
+![Client + DB UML](<CP4Client+DB_Diagram.png>)
+
+
+- ## Implementation: Package/module diagram. 
+![Package/Module diagram](<CP4PackageDiagram.png>)
+
+- ## Use-Case: All use cases including CP4 features.
+![Use Case Diagram](<CP4 UsecaseViewDiagram.png>)
+
+- ## Process: System Sequence Diagrams
+
+### Order History Filtering & Search Sequence Diagram
+![Order History Filtering SSD](<CP4 Order History Filtering-Search SSD.png>)
+
