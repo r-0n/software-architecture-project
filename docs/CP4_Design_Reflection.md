@@ -6,34 +6,10 @@ Checkpoint 4 introduced three lightweight enhancements to the retail management 
 
 ---
 
-## 1. Core Design Philosophy: Consistency Over Innovation
-
-### Decision: Server-Side Rendering with Django Forms
-
-**What We Chose:**
-- Django's built-in form handling with GET parameters
-- Server-side filtering using Django ORM
-- Template-based UI rendering with Bootstrap components
-- No new infrastructure or services
-
-**Why This Matters:**
-The decision to stick with server-side rendering rather than introducing React, WebSockets, or API endpoints demonstrates a mature understanding of **architectural consistency**. Every new feature follows the same pattern as existing code, making the codebase predictable and maintainable.
-
-**Key Insight:** 
-> "The best architecture is one that developers can understand and extend without learning new paradigms."
-
-**Evidence from Code:**
-```python
-# OrderHistoryFilterForm follows the same pattern as ProductSearchForm
-class OrderHistoryFilterForm(forms.Form):
-    search = forms.CharField(required=False)
-    status = forms.ChoiceField(required=False)
-    # ... consistent with existing form patterns
-```
 
 ---
 
-## 2. Smart Abstraction: Mapping Complex State to Simple Categories
+## 1. Smart Abstraction: Mapping Complex State to Simple Categories
 
 ### Decision: `overall_status` Mapping for RMA States
 
@@ -65,7 +41,7 @@ We accepted a small performance cost (computing `overall_status` for each sale) 
 
 ---
 
-## 3. Configuration Strategy: Environment Variables Over Database Models
+## 2. Configuration Strategy: Environment Variables Over Database Models
 
 ### Decision: Environment Variable for Low-Stock Threshold
 
@@ -97,7 +73,7 @@ If per-user thresholds become necessary, we can add a `UserPreference` model wit
 
 ---
 
-## 4. Security-First Filtering: Server-Side Validation
+## 3. Security-First Filtering: Server-Side Validation
 
 ### Decision: All Filtering Logic in Views, Not Templates
 
@@ -125,7 +101,7 @@ if search_form.is_valid():
 
 ---
 
-## 5. UI Consistency: Reusing Existing Patterns
+## 4. UI Consistency: Reusing Existing Patterns
 
 ### Decision: Match ProductSearchForm Design for Order History Filters
 
@@ -160,7 +136,7 @@ When we update the form styling in one place, it automatically applies to all fo
 
 ---
 
-## 6. Lightweight Notifications: Template-Based Over Real-Time
+## 5. Lightweight Notifications: Template-Based Over Real-Time
 
 ### Decision: Bootstrap Badges for RMA Status, No Backend Service
 
@@ -193,7 +169,7 @@ If real-time updates become necessary, we can add WebSocket support without brea
 
 ---
 
-## 7. Special Case Handling: "Completed" Filter Logic
+## 6. Special Case Handling: "Completed" Filter Logic
 
 ### Decision: Special Logic for "Completed" Status Filter
 
@@ -222,7 +198,7 @@ Show all completed orders (with or without returns). This would be simpler but l
 
 ---
 
-## 8. Admin Access Control: Consistent Authorization Pattern
+## 7. Admin Access Control: Consistent Authorization Pattern
 
 ### Decision: Use `user_is_admin` Context Processor, Not Django's `is_staff`
 
@@ -250,7 +226,7 @@ We're not using Django's built-in `is_staff` flag. This is acceptable because:
 
 ---
 
-## 9. Query Optimization: Django ORM Over Raw SQL
+## 8. Query Optimization: Django ORM Over Raw SQL
 
 ### Decision: Use Django ORM with Q Objects for Complex Queries
 
@@ -280,7 +256,7 @@ Raw SQL might be slightly faster for very complex queries, but:
 
 ---
 
-## 10. Form Validation: Server-Side Only
+## 9. Form Validation: Server-Side Only
 
 ### Decision: Django Form Validation, No Client-Side JavaScript
 
