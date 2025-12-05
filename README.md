@@ -132,7 +132,15 @@ The system includes comprehensive observability features to support debugging an
 software-architecture-project/
 ├── db/                      # Database schema documentation
 │   └── init.sql             # Complete database schema (Django-generated)
-├── docs/                    # Documentation (ADR, UML, QS-Catalog, Record/Playback)
+├── docs/                    # Documentation
+│   ├── ADR/                 # Architectural Decision Records
+│   │   ├── CP4_ADR.md       # CP4 features (Order History, Low-Stock Alerts, RMA Notifications)
+│   │   └── ...              # Other ADRs (persistence, observability, returns, etc.)
+│   ├── UML/                 # UML diagrams for all checkpoints (CP1-CP4)
+│   │   └── UMLdiagrams.md   # Complete 4+1 view diagrams for CP1-CP4
+│   ├── QS-Catalog.md        # Quality Scenario Catalog
+│   ├── record_playback.md   # Record/Playback testing documentation
+│   └── RUNBOOK.md           # Operational runbook
 ├── tests/                   # Unit tests (business logic + database integration + robustness + record/playback)
 ├── README.md                # This file
 ├── requirements.txt         # Dependencies
@@ -141,9 +149,9 @@ software-architecture-project/
     ├── manage.py            # Django management script
     ├── db.sqlite3           # SQLite database
     ├── accounts/            # Authentication (models, views, forms, urls)
-    ├── products/            # Product management (CRUD, categories, admin)
+    ├── products/            # Product management (CRUD, categories, admin, low-stock filtering)
     ├── cart/                # Shopping cart (models, business_rules, checkout, robustness)
-    ├── orders/              # Order processing (sales, payments, PDF receipts)
+    ├── orders/              # Order processing (sales, payments, PDF receipts, history filtering)
     ├── partner_feeds/       # Partner catalog ingestion (adapters, validators, services)
     ├── payments/            # Payment resilience (client, policy, service)
     ├── retail/              # Main project (settings, urls, middleware, logging)
